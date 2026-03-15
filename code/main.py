@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 
-from database import engine, SessionLocal
-from models import Base, User
-from schemas import UserCreate, UserResponse
+from database import engine, Base
+from routers.faculty_major_router import router as faculty_major_router
+from routers.student_register_router import router as student_register_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +18,9 @@ origins = [
     "https://www.rbac-activity.com",
     "https://rbac-front.pages.dev",
     "https://api.rbac-activity.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:8000",
 ]
 
 app.add_middleware(
@@ -29,36 +31,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+app.include_router(faculty_major_router)
+app.include_router(student_register_router)
+
+
 
 @app.get("/")
 def root():
     return {"message": "RBAC API running"}
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-@app.post("/users", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-
-    db_user = User(
-        name=user.name,
-        email=user.email,
-        password=user.password
-    )
-
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-
-    return db_user
-
-@app.get("/users")
-def get_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
