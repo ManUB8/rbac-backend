@@ -62,3 +62,11 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 @app.get("/users")
 def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
+
+@app.get("/daso")
+def health():
+    return {"status": "ko"}
+
+@app.get("/sofa")
+def health():
+    return {"status": "kkud"}
