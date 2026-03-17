@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers.faculty_major_router import router as faculty_major_router
 from routers.student_register_router import router as student_register_router
+from routers.activity_router import router as activity_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -33,6 +34,7 @@ app.add_middleware(
 
 app.include_router(faculty_major_router)
 app.include_router(student_register_router)
+app.include_router(activity_router)
 
 
 

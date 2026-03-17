@@ -17,7 +17,6 @@ class Faculty(Base):
     # 1 faculty มีหลาย student
     students = relationship("Student", back_populates="faculty")
 
-
 # ตารางสาขา
 class Major(Base):
     __tablename__ = "majors"
@@ -38,8 +37,7 @@ class Major(Base):
 
     # 1 major มีหลาย student
     students = relationship("Student", back_populates="major")
-    
-    
+
     
 class User(Base):
     __tablename__ = "users"
@@ -55,7 +53,7 @@ class User(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
-   # 1 user student ผูกกับ student profile เดียว
+# 1 user student ผูกกับ student profile เดียว
     student = relationship("Student", back_populates="user", uselist=False)
 
 
@@ -89,3 +87,33 @@ class Student(Base):
 
     # Student -> User
     user = relationship("User", back_populates="student")
+
+
+
+class Activity(Base):
+    __tablename__ = "activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # ชื่อกิจกรรม
+    activity_name = Column(String(255), nullable=False)
+
+    # วันที่จัดกิจกรรม
+    activity_date = Column(Date, nullable=False)
+
+    # เวลาเริ่ม / เวลาจบ
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+
+    # จำนวนชั่วโมงกิจกรรม
+    hours = Column(Numeric(4, 2), nullable=False)
+
+    # สถานที่
+    location = Column(String(255), nullable=True)
+
+    # รายละเอียดกิจกรรม
+    description = Column(Text, nullable=True)
+
+    # วันเวลาที่สร้าง / แก้ไข
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
