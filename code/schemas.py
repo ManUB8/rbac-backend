@@ -87,31 +87,32 @@ class StudentUpdateRequest(BaseModel):
     last_name: Optional[str] = None
     citizen_id: Optional[str] = None
     gender: Optional[str] = None
-
-    faculty_name: Optional[str] = None
-    major_name: Optional[str] = None
     faculty_id: Optional[int] = None
     major_id: Optional[int] = None
-
+    faculty_name: Optional[str] = None
+    major_name: Optional[str] = None
     img_stu: Optional[str] = None
 
 class StudentResponse(BaseModel):
     id: int
     student_id: str
-    prefix: Optional[str]
+    prefix: str
     first_name: str
     last_name: str
-    citizen_id: Optional[str]
     gender: Optional[str]
+
     faculty_id: int
-    faculty_name: str
     major_id: int
-    major_name: str
-    user_id: int
+
+    faculty_name: Optional[str]
+    major_name: Optional[str]
+
     img_stu: Optional[str]
 
 class Config:
-        from_attributes = True
+    from_attributes = True
+class Config:
+    from_attributes = True
 
 class StudentMessageResponse(BaseModel):
     msg: str

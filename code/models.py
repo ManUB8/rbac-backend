@@ -87,6 +87,13 @@ class Student(Base):
 
     # Student -> User
     user = relationship("User", back_populates="student")
+    @property
+    def faculty_name(self):
+        return self.faculty.faculty_name if self.faculty else None
+
+    @property
+    def major_name(self):
+        return self.major.major_name if self.major else None
 
 
 

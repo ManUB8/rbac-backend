@@ -205,89 +205,116 @@ def get_student(student_db_id: int, db: Session = Depends(get_db)):
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     return student
+    
 
 
-@router.put("/{student_db_id}", response_model=StudentMessageResponse)
-def update_student(student_db_id: int, data: StudentUpdateRequest, db: Session = Depends(get_db)):
+@router.put("/{student_id}", response_model=StudentResponse)
+def update_student(student_id: int, data: StudentUpdateRequest, db: Session = Depends(get_db)):
     """
     แก้ไขข้อมูลนักศึกษา
-    รองรับแก้คณะ/สาขาทั้งแบบ id และ name
     """
-    student = db.query(Student).filter(Student.id == student_db_id).first()
+
+    student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # ตรวจ citizen_id ซ้ำ ถ้ามีการส่งมาแก้
-    if data.citizen_id:
-        existing_citizen = db.query(Student).filter(
-            Student.citizen_id == data.citizen_id,
-            Student.id != student_db_id
-        ).first()
-        if existing_citizen:
-            raise HTTPException(status_code=400, detail="Citizen ID already exists")
-
-    # อัปเดตข้อมูลพื้นฐาน
     update_data = data.model_dump(exclude_unset=True)
 
-    for field in ["prefix", "first_name", "last_name", "citizen_id", "gender", "img_stu"]:
-        if field in update_data:
-            setattr(student, field, update_data[field])
+    # -----------------------------
+    # แก้ faculty
+    # -----------------------------
+    if "faculty_id" in update_data or "faculty_name" in update_data:
+        faculty = None
 
-    # ถ้ามีการส่งข้อมูล faculty/major มา ให้ resolve ใหม่
-    has_faculty_or_major_update = any([
-        data.faculty_id is not None,
-        data.faculty_name is not None,
-        data.major_id is not None,
-        data.major_name is not None
-    ])
+        if update_data.get("faculty_id"):
+            faculty = db.query(Faculty).filter(Faculty.id == update_data["faculty_id"]).first()
+            if not faculty:
+                raise HTTPException(status_code=404, detail="Faculty ID not found")
 
-    if has_faculty_or_major_update:
-        # ถ้าไม่ได้ส่ง faculty/major มาครบ จะใช้ค่าปัจจุบันเติมให้
-        current_faculty = db.query(Faculty).filter(Faculty.id == student.faculty_id).first()
-        current_major = db.query(Major).filter(Major.id == student.major_id).first()
+        if update_data.get("faculty_name"):
+            faculty_by_name = db.query(Faculty).filter(
+                Faculty.faculty_name == update_data["faculty_name"]
+            ).first()
 
-        faculty, major = resolve_faculty_and_major(
-            db=db,
-            faculty_id=data.faculty_id if data.faculty_id is not None else current_faculty.id,
-            faculty_name=data.faculty_name,
-            major_id=data.major_id if data.major_id is not None else current_major.id,
-            major_name=data.major_name,
-        )
+            if not faculty_by_name:
+                raise HTTPException(status_code=404, detail="Faculty name not found")
+
+            if faculty and faculty.id != faculty_by_name.id:
+                raise HTTPException(status_code=400, detail="faculty_id and faculty_name do not match")
+
+            faculty = faculty_by_name
 
         if faculty:
             student.faculty_id = faculty.id
+
+    # -----------------------------
+    # แก้ major
+    # -----------------------------
+    if "major_id" in update_data or "major_name" in update_data:
+        major = None
+
+        if update_data.get("major_id"):
+            major = db.query(Major).filter(Major.id == update_data["major_id"]).first()
+            if not major:
+                raise HTTPException(status_code=404, detail="Major ID not found")
+
+        if update_data.get("major_name"):
+            major_by_name = db.query(Major).filter(
+                Major.major_name == update_data["major_name"]
+            ).first()
+
+            if not major_by_name:
+                raise HTTPException(status_code=404, detail="Major name not found")
+
+            if major and major.id != major_by_name.id:
+                raise HTTPException(status_code=400, detail="major_id and major_name do not match")
+
+            major = major_by_name
+
         if major:
             student.major_id = major.id
+
+    # -----------------------------
+    # ตรวจว่า major อยู่ใน faculty เดียวกัน
+    # -----------------------------
+    if student.major_id and student.faculty_id:
+        major_check = db.query(Major).filter(Major.id == student.major_id).first()
+        if major_check and major_check.faculty_id != student.faculty_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Selected major does not belong to selected faculty"
+            )
+
+    # -----------------------------
+    # update field อื่น
+    # -----------------------------
+    for key, value in update_data.items():
+        if key not in ["faculty_id", "faculty_name", "major_id", "major_name"]:
+            setattr(student, key, value)
 
     db.commit()
     db.refresh(student)
 
-    return {
-        "msg": "แก้ไขข้อมูลนักศึกษาสำเร็จ",
-        "data": student
-    }
+    return student
 
-
-@router.delete("/{student_db_id}", response_model=StudentDeleteResponse)
-def delete_student(student_db_id: int, db: Session = Depends(get_db)):
+@router.delete("/{student_id}")
+def delete_student(student_id: int, db: Session = Depends(get_db)):
     """
     ลบนักศึกษา
-    และลบ user ที่ผูกอยู่ด้วย
     """
-    student = db.query(Student).filter(Student.id == student_db_id).first()
+
+    student = db.query(Student).filter(Student.id == student_id).first()
+
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    # ลบ user ด้วย (ถ้ามี FK)
     user = db.query(User).filter(User.id == student.user_id).first()
-
-    db.delete(student)
-
-    # ถ้ามี user ผูกอยู่ก็ลบด้วย
     if user:
         db.delete(user)
 
+    db.delete(student)
     db.commit()
 
-    return {
-        "msg": "ลบนักศึกษาสำเร็จ"
-    }
+    return {"msg": "ลบนักศึกษาสำเร็จ"}
+    
