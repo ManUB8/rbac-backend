@@ -102,7 +102,7 @@ def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)
     if existing_user:
         raise HTTPException(
             status_code=400, 
-            detail=f"รหัสนิสิตลงทะเบียนแล้ว: {data.user.username}"
+            detail=f"ชื่อผู้ใช้นี้ถูกลงทะเบียนแล้ว: {data.user.username}"
 )
 
     faculty, major = resolve_faculty_and_major(
@@ -177,7 +177,7 @@ def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(
     if existing_user:
         raise HTTPException(
         status_code=400,
-        detail=f"รหัสนิสิตลงทะเบียนแล้ว: {data.user.username}"
+        detail=f"ชื่อผู้ใช้นี้ถูกลงทะเบียนแล้ว: {data.user.username}"
 )
 
     if data.citizen_id:
