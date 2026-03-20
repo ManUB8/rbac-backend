@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 
@@ -82,18 +82,22 @@ class StudentRegisterRequest(BaseModel):
     user: StudentUserCreate
 
 
-class StudentResponse(BaseModel):
+class StudentDataResponse(BaseModel):
     id: int
     student_id: str
-    prefix: Optional[str]
+    prefix: str | None = None
     first_name: str
     last_name: str
-    citizen_id: Optional[str]
-    gender: Optional[str]
+    citizen_id: str | None = None
+    gender: str | None = None
     faculty_id: int
     major_id: int
     user_id: int
-    img_stu: Optional[str]
+    img_stu: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StudentRegisterResponse(BaseModel):
+    msg: str
+    data: StudentDataResponse

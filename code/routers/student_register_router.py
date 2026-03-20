@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import Student, User, Faculty, Major
-from schemas import StudentRegisterRequest, StudentResponse
+from schemas import StudentRegisterRequest,StudentRegisterResponse
 
 router = APIRouter(prefix="/student", tags=["Student Register"])
 
@@ -19,7 +19,7 @@ def get_db():
         db.close()
 
 
-@router.post("/register", response_model=StudentResponse)
+@router.post("/register", response_model=StudentRegisterResponse)
 def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)):
     """
     สมัครนิสิตใหม่
@@ -151,4 +151,7 @@ def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)
     db.commit()
     db.refresh(student)
 
-    return student
+    return {
+        "msg": "สร้างนักศึกษาสำเร็จ",
+        "data": student
+    }
