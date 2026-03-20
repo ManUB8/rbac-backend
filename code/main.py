@@ -5,6 +5,9 @@ from database import engine, Base
 from routers.faculty_major_router import router as faculty_major_router
 from routers.student_register_router import router as student_register_router
 from routers.activity_router import router as activity_router
+from routers.user_router import router as user_router
+from routers.admin_auth_router import router as admin_auth_router
+from routers.student_auth_router import router as student_auth_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,7 +38,9 @@ app.add_middleware(
 app.include_router(faculty_major_router)
 app.include_router(student_register_router)
 app.include_router(activity_router)
-
+app.include_router(user_router)
+app.include_router(admin_auth_router)
+app.include_router(student_auth_router)
 
 
 @app.get("/")

@@ -12,7 +12,7 @@ from schemas import (
     FacultyWithMajorsResponse,
 )
 
-router = APIRouter(prefix="/faculty-majors", tags=["Faculty & Majors"])
+router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
 
 
 def get_db():
@@ -33,7 +33,7 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
     """
     existing = db.query(Faculty).filter(Faculty.faculty_name == data.faculty_name).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Faculty already exists")
+        raise HTTPException(status_code=400, detail="คณะนี้ถูกลงทะเบียนแล้ว")
 
     faculty = Faculty(faculty_name=data.faculty_name)
     db.add(faculty)
@@ -49,14 +49,14 @@ def create_major(data: MajorCreate, db: Session = Depends(get_db)):
     """
     faculty = db.query(Faculty).filter(Faculty.id == data.faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="Faculty not found")
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
     existing_major = db.query(Major).filter(
         Major.major_name == data.major_name,
         Major.faculty_id == data.faculty_id
     ).first()
     if existing_major:
-        raise HTTPException(status_code=400, detail="Major already exists in this faculty")
+        raise HTTPException(status_code=400, detail="สาขานี้มีการลงทะเบียนแล้วในคณะนี้แล้ว")
 
     major = Major(
         major_name=data.major_name,
@@ -140,19 +140,19 @@ def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
     )
 
     if not faculty:
-        raise HTTPException(status_code=404, detail="Faculty not found")
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
     return faculty
 
 
-@router.put("/faculties/{faculty_id}", response_model=FacultyResponse)
+@router.patch("/faculties/{faculty_id}", response_model=FacultyResponse)
 def update_faculty(faculty_id: int, data: FacultyCreate, db: Session = Depends(get_db)):
     """
     แก้ชื่อคณะ
     """
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="Faculty not found")
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
     faculty.faculty_name = data.faculty_name
     db.commit()
@@ -160,18 +160,18 @@ def update_faculty(faculty_id: int, data: FacultyCreate, db: Session = Depends(g
     return faculty
 
 
-@router.put("/majors/{major_id}", response_model=MajorResponse)
+@router.patch("/majors/{major_id}", response_model=MajorResponse)
 def update_major(major_id: int, data: MajorCreate, db: Session = Depends(get_db)):
     """
     แก้ชื่อสาขา หรือย้ายสาขาไปอีกคณะ
     """
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
-        raise HTTPException(status_code=404, detail="Major not found")
+        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
 
     faculty = db.query(Faculty).filter(Faculty.id == data.faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="Faculty not found")
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
     major.major_name = data.major_name
     major.faculty_id = data.faculty_id
@@ -188,7 +188,7 @@ def delete_faculty(faculty_id: int, db: Session = Depends(get_db)):
     """
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="Faculty not found")
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
     db.delete(faculty)
     db.commit()
@@ -202,7 +202,7 @@ def delete_major(major_id: int, db: Session = Depends(get_db)):
     """
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
-        raise HTTPException(status_code=404, detail="Major not found")
+        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
 
     db.delete(major)
     db.commit()

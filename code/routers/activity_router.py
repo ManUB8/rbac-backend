@@ -11,7 +11,7 @@ from schemas import (
     ActivityDeleteResponse,
 )
 
-router = APIRouter(prefix="/activity", tags=["Activity"])
+router = APIRouter(prefix="/activity/v1", tags=["Activity"])
 
 
 def get_db():
@@ -53,10 +53,9 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
     db.refresh(activity)
 
     return {
-        "msg": "สร้างกิจกรรมสำเร็จ",
-        "data": activity
-    }
-
+    "detail": "สร้างกิจกรรมสำเร็จ",
+    "data": activity
+}
 
 @router.get("/all", response_model=list[ActivityResponse])
 def get_all_activities(db: Session = Depends(get_db)):
@@ -80,7 +79,7 @@ def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
     return activity
 
 
-@router.put("/{activity_id}", response_model=ActivityMessageResponse)
+@router.patch("/{activity_id}", response_model=ActivityMessageResponse)
 def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session = Depends(get_db)):
     """
     แก้ไขกิจกรรม
