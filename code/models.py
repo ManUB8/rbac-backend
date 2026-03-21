@@ -176,3 +176,33 @@ class Activity(Base):
 
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+# =========================
+# Student Activity
+# =========================
+
+class StudentActivity(Base):
+    __tablename__ = "student_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    activity_id = Column(Integer, ForeignKey("activities.id", ondelete="CASCADE"), nullable=False)
+
+    attendance_status = Column(String(20), nullable=False, default="ไม่เข้าร่วม")
+    checkin_at = Column(TIMESTAMP, nullable=True)
+
+    active_status = Column(Boolean, default=True)
+
+    created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by_name = Column(String(150), nullable=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    updated_by_name = Column(String(150), nullable=True)
+
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+    student = relationship("Student", foreign_keys=[student_id])
+    activity = relationship("Activity", foreign_keys=[activity_id])
+
+    __table_args__ = ()

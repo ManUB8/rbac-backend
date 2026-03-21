@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import Activity, User
-from schemas import (
+from schemas.schemas_activity import (
     ActivityCreateRequest,
     ActivityUpdateRequest,
     ActivityDeleteRequest,
@@ -11,7 +11,6 @@ from schemas import (
     ActivityMessageResponse,
     ActivityDeleteResponse,
 )
-
 router = APIRouter(prefix="/activity/v1", tags=["Activity"])
 
 

@@ -5,10 +5,9 @@ from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from models import Student, User, Faculty, Major
-from schemas import (
+from schemas.schemas_student import (
     StudentRegisterRequest,
     StudentAdminCreateRequest,
-    StudentAdminUpdateRequest,
     StudentUpdateRequest,
     StudentResponse,
     StudentMessageResponse,
@@ -19,8 +18,6 @@ from schemas import (
     StudentMajorListResponse,
     StudentAdminUpdateWithUserRequest,
     StudentDetailWithUserResponse,
-    
-    
 )
 
 router = APIRouter(prefix="/student/v1", tags=["Student Register"])

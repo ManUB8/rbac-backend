@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import User
-from schemas import AdminLoginRequest, AdminLoginResponse
+from schemas.schemas_user import AdminLoginRequest, AdminLoginResponse
 
 router = APIRouter(prefix="/admin-auth/v1", tags=["Admin Auth"])
 

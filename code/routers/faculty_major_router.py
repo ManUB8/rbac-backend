@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import SessionLocal
 from models import Faculty, Major, User
-from schemas import (
+from schemas.schemas_faculty_major import (
     FacultyCreate,
     FacultyUpdate,
     FacultyResponse,
@@ -14,7 +14,6 @@ from schemas import (
     FacultyWithMajorsResponse,
     DeleteByAdminRequest,
 )
-
 router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
 
 
