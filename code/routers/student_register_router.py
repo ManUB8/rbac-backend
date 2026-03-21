@@ -49,15 +49,15 @@ def resolve_faculty_and_major(db: Session, faculty_id=None, faculty_name=None, m
     if faculty_id is not None:
         faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
         if not faculty:
-            raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
+            raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสคณะ")
 
     if faculty_name:
         faculty_by_name = db.query(Faculty).filter(Faculty.faculty_name == faculty_name).first()
         if not faculty_by_name:
-            raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
+            raise HTTPException(status_code=500, detail="ไม่พบชื่อคณะ")
 
         if faculty and faculty.id != faculty_by_name.id:
-            raise HTTPException(status_code=400, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
+            raise HTTPException(status_code=500, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
 
         faculty = faculty_by_name
 
@@ -65,21 +65,21 @@ def resolve_faculty_and_major(db: Session, faculty_id=None, faculty_name=None, m
     if major_id is not None:
         major = db.query(Major).filter(Major.id == major_id).first()
         if not major:
-            raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
+            raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสสาขา")
 
     if major_name:
         major_by_name = db.query(Major).filter(Major.major_name == major_name).first()
         if not major_by_name:
-            raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
+            raise HTTPException(status_code=500, detail="ไม่พบชื่อสาขา")
 
         if major and major.id != major_by_name.id:
-            raise HTTPException(status_code=400, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
+            raise HTTPException(status_code=500, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
 
         major = major_by_name
 
     if faculty and major:
         if major.faculty_id != faculty.id:
-            raise HTTPException(status_code=400, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
+            raise HTTPException(status_code=500, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
 
     return faculty, major
 
@@ -114,10 +114,10 @@ def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)
     )
 
     if not faculty:
-        raise HTTPException(status_code=400, detail="โปรดระบุเลขรหัสคณะหรือชื่อคณะ")
+        raise HTTPException(status_code=500, detail="โปรดระบุเลขรหัสคณะหรือชื่อคณะ")
 
     if not major:
-        raise HTTPException(status_code=400, detail="โปรดระบุเลขรหัสสาขาหรือชื่อสาขา")
+        raise HTTPException(status_code=500, detail="โปรดระบุเลขรหัสสาขาหรือชื่อสาขา")
 
     full_name = f"{data.first_name} {data.last_name}".strip()
 
@@ -169,7 +169,7 @@ def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(
     existing_student = db.query(Student).filter(Student.student_id == data.student_id).first()
     if existing_student:
         raise HTTPException(
-        status_code=400,
+        status_code=500,
         detail=f"รหัสนิสิตลงทะเบียนแล้ว: {data.user.username}"
 )
 
@@ -183,7 +183,7 @@ def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(
     if data.citizen_id:
         existing_citizen = db.query(Student).filter(Student.citizen_id == data.citizen_id).first()
         if existing_citizen:
-            raise HTTPException(status_code=400, detail="เลขบัตรประชาชนลงทะเบียนแล้ว")
+            raise HTTPException(status_code=500, detail="เลขบัตรประชาชนลงทะเบียนแล้ว")
 
     faculty, major = resolve_faculty_and_major(
         db=db,
@@ -194,10 +194,10 @@ def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(
     )
 
     if not faculty:
-        raise HTTPException(status_code=400, detail="โปรดระบุเลขรหัสคณะหรือชื่อคณะ")
+        raise HTTPException(status_code=500, detail="โปรดระบุเลขรหัสคณะหรือชื่อคณะ")
 
     if not major:
-        raise HTTPException(status_code=400, detail="โปรดระบุเลขรหัสสาขาหรือชื่อสาขา")
+        raise HTTPException(status_code=500, detail="โปรดระบุเลขรหัสสาขาหรือชื่อสาขา")
 
     admin = get_admin_by_name(db, data.created_by_name)
     full_name = f"{data.first_name} {data.last_name}".strip()
@@ -282,7 +282,7 @@ def get_students(db: Session = Depends(get_db)):
 def get_student(student_db_id: int, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.id == student_db_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
     return student
 
 
@@ -293,7 +293,7 @@ def get_student(student_db_id: int, db: Session = Depends(get_db)):
 def update_student(student_id: int, data: StudentUpdateRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -303,7 +303,7 @@ def update_student(student_id: int, data: StudentUpdateRequest, db: Session = De
         if update_data.get("faculty_id") is not None:
             faculty = db.query(Faculty).filter(Faculty.id == update_data["faculty_id"]).first()
             if not faculty:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสคณะ")
 
         if update_data.get("faculty_name"):
             faculty_by_name = db.query(Faculty).filter(
@@ -311,7 +311,7 @@ def update_student(student_id: int, data: StudentUpdateRequest, db: Session = De
             ).first()
 
             if not faculty_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อคณะ")
 
             if faculty and faculty.id != faculty_by_name.id:
                 raise HTTPException(status_code=400, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
@@ -327,7 +327,7 @@ def update_student(student_id: int, data: StudentUpdateRequest, db: Session = De
         if update_data.get("major_id") is not None:
             major = db.query(Major).filter(Major.id == update_data["major_id"]).first()
             if not major:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสสาขา")
 
         if update_data.get("major_name"):
             major_by_name = db.query(Major).filter(
@@ -335,7 +335,7 @@ def update_student(student_id: int, data: StudentUpdateRequest, db: Session = De
             ).first()
 
             if not major_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อสาขา")
 
             if major and major.id != major_by_name.id:
                 raise HTTPException(status_code=400, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
@@ -368,7 +368,7 @@ def update_student(student_id: int, data: StudentUpdateRequest, db: Session = De
 def admin_update_student(student_id: int, data: StudentAdminUpdateRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
     admin = get_admin_by_name(db, data.updated_by_name)
     update_data = data.model_dump(exclude_unset=True)
@@ -379,14 +379,14 @@ def admin_update_student(student_id: int, data: StudentAdminUpdateRequest, db: S
         if update_data.get("faculty_id") is not None:
             faculty = db.query(Faculty).filter(Faculty.id == update_data["faculty_id"]).first()
             if not faculty:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสคณะ")
 
         if update_data.get("faculty_name"):
             faculty_by_name = db.query(Faculty).filter(
                 Faculty.faculty_name == update_data["faculty_name"]
             ).first()
             if not faculty_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อคณะ")
 
             if faculty and faculty.id != faculty_by_name.id:
                 raise HTTPException(status_code=400, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
@@ -402,14 +402,14 @@ def admin_update_student(student_id: int, data: StudentAdminUpdateRequest, db: S
         if update_data.get("major_id") is not None:
             major = db.query(Major).filter(Major.id == update_data["major_id"]).first()
             if not major:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสสาขา")
 
         if update_data.get("major_name"):
             major_by_name = db.query(Major).filter(
                 Major.major_name == update_data["major_name"]
             ).first()
             if not major_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อสาขา")
 
             if major and major.id != major_by_name.id:
                 raise HTTPException(status_code=400, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
@@ -457,7 +457,7 @@ def delete_student(
     #  หา student
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
     #  เช็คว่าเป็น admin จริง
     admin = db.query(User).filter(

@@ -105,7 +105,7 @@ def get_user(
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=500, detail="User not found")
     return user
 
 
@@ -120,7 +120,7 @@ def update_user(
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=500, detail="User not found")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -130,7 +130,7 @@ def update_user(
         if existing_user:
             raise HTTPException(status_code=400, detail="Username already exists")
 
-    # 🔥 เช็ค updater
+    # เช็ค updater
     if not data.updated_by_name:
         raise HTTPException(status_code=400, detail="updated_by_name is required")
 
@@ -146,7 +146,7 @@ def update_user(
     for key, value in update_data.items():
         setattr(user, key, value)
 
-    # ✅ ใช้ id จริง
+    #  ใช้ id จริง
     user.updated_by_id = updater.id
     user.updated_by_name = updater.name
 
@@ -168,7 +168,7 @@ def delete_user(
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=500, detail="User not found")
 
     # กันลบตัวเอง ถ้ามี current_user
     if current_user and user.id == current_user.id:

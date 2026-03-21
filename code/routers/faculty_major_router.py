@@ -98,7 +98,7 @@ def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
     )
 
     if not faculty:
-        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
+        raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
     return faculty
 
@@ -114,7 +114,7 @@ def update_faculty(
 ):
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
+        raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
@@ -122,7 +122,7 @@ def update_faculty(
         existing = db.query(Faculty).filter(Faculty.faculty_name == data.faculty_name).first()
         if existing:
             raise HTTPException(
-                status_code=400,
+                status_code=500,
                 detail=f"คณะนี้มีอยู่แล้ว: {data.faculty_name}"
             )
         faculty.faculty_name = data.faculty_name
@@ -147,7 +147,7 @@ def delete_faculty(
 ):
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
+        raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
     admin = get_admin_by_name(db, updated_by_name)
     print("admin.id",admin.id)
@@ -179,7 +179,7 @@ def create_major(data: MajorCreate, db: Session = Depends(get_db)):
 
     faculty = db.query(Faculty).filter(Faculty.id == data.faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail=f"ไม่พบคณะ id: {data.faculty_id}")
+        raise HTTPException(status_code=500, detail=f"ไม่พบคณะ id: {data.faculty_id}")
 
     existing_major = db.query(Major).filter(
         Major.major_name == data.major_name,
@@ -188,7 +188,7 @@ def create_major(data: MajorCreate, db: Session = Depends(get_db)):
 
     if existing_major:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"สาขานี้มีการลงทะเบียนแล้วในคณะนี้: {data.major_name}"
         )
 
@@ -223,7 +223,7 @@ def get_all_majors(db: Session = Depends(get_db)):
 def get_major(major_id: int, db: Session = Depends(get_db)):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
-        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
+        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
     return major
 
 
@@ -234,7 +234,7 @@ def get_major(major_id: int, db: Session = Depends(get_db)):
 def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
-        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
+        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
@@ -243,7 +243,7 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 
     faculty = db.query(Faculty).filter(Faculty.id == new_faculty_id).first()
     if not faculty:
-        raise HTTPException(status_code=404, detail=f"ไม่พบคณะ id: {new_faculty_id}")
+        raise HTTPException(status_code=500, detail=f"ไม่พบคณะ id: {new_faculty_id}")
 
     existing_major = (
         db.query(Major)
@@ -285,7 +285,7 @@ def delete_major(
 ):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
-        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
+        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
 
     admin = get_admin_by_name(db, updated_by_name)
 

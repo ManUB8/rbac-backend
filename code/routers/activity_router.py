@@ -74,7 +74,7 @@ def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
+        raise HTTPException(status_code=500, detail="Activity not found")
 
     return activity
 
@@ -87,7 +87,7 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
+        raise HTTPException(status_code=500, detail="Activity not found")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -121,7 +121,7 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
+        raise HTTPException(status_code=500, detail="Activity not found")
 
     db.delete(activity)
     db.commit()
