@@ -12,6 +12,7 @@ from schemas import (
     MajorResponse,
     FacultyWithMajorsCreate,
     FacultyWithMajorsResponse,
+    DeleteByAdminRequest,
 )
 
 router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
@@ -139,25 +140,21 @@ def update_faculty(
 # =========================
 # DELETE FACULTY
 # =========================
+
 @router.delete("/faculties/{faculty_id}")
 def delete_faculty(
     faculty_id: int,
-    updated_by_name: str,
+    data: DeleteByAdminRequest,
     db: Session = Depends(get_db)
 ):
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
         raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
-    admin = get_admin_by_name(db, updated_by_name)
-    print("admin.id",admin.id)
-    print("admin.name",admin.name)
-    
-
+    admin = get_admin_by_name(db, data.updated_by_name)
 
     faculty_name = faculty.faculty_name
 
-    # อัปเดต audit ก่อนลบ
     faculty.updated_by_id = admin.id
     faculty.updated_by_name = admin.name
     db.flush()
@@ -168,7 +165,6 @@ def delete_faculty(
     return {
         "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
     }
-
 
 # =========================
 # CREATE MAJOR
@@ -277,31 +273,31 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 # =========================
 # DELETE MAJOR
 # =========================
-@router.delete("/majors/{major_id}")
-def delete_major(
-    major_id: int,
-    updated_by_name: str,
+
+@router.delete("/faculties/{faculty_id}")
+def delete_faculty(
+    faculty_id: int,
+    data: DeleteByAdminRequest,
     db: Session = Depends(get_db)
 ):
-    major = db.query(Major).filter(Major.id == major_id).first()
-    if not major:
-        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
+    faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
+    if not faculty:
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
 
-    admin = get_admin_by_name(db, updated_by_name)
+    admin = get_admin_by_name(db, data.updated_by_name)
 
-    major_name = major.major_name
+    faculty_name = faculty.faculty_name
 
-    major.updated_by_id = admin.id
-    major.updated_by_name = admin.name
+    faculty.updated_by_id = admin.id
+    faculty.updated_by_name = admin.name
     db.flush()
 
-    db.delete(major)
+    db.delete(faculty)
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
+        "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
     }
-
 
 # =========================
 # BULK CREATE FACULTIES WITH MAJORS

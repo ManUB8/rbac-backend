@@ -31,6 +31,9 @@ class FacultyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class DeleteByAdminRequest(BaseModel):
+    updated_by_name: str
 
 # =========================
 # Major
