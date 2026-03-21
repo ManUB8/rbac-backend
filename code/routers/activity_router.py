@@ -75,7 +75,7 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         location=data.location,
         description=data.description,
         activity_img=data.activity_img,
-        active_status=True,
+        activity_status=data.activity_status,
 
         created_by_id=admin.id,
         created_by_name=admin.name,
@@ -135,7 +135,7 @@ def update_activity(
 
     activity = db.query(Activity).filter(
         Activity.id == activity_id,
-        Activity.active_status == True
+        Activity.activity_status == True
     ).first()
 
     if not activity:

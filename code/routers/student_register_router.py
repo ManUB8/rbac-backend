@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from models import Student, User, Faculty, Major
@@ -18,6 +19,8 @@ from schemas import (
     StudentMajorListResponse,
     StudentAdminUpdateWithUserRequest,
     StudentDetailWithUserResponse,
+    
+    
 )
 
 router = APIRouter(prefix="/student/v1", tags=["Student Register"])
@@ -344,10 +347,29 @@ def admin_update_student_with_user(
         .first()
     )
     if not student:
-        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
 
     admin = get_admin_by_name(db, data.updated_by_name)
+    if not admin:
+        raise HTTPException(status_code=404, detail="ไม่พบผู้ดูแลระบบ")
+
     update_data = data.model_dump(exclude_unset=True)
+
+    # กัน empty string -> None สำหรับ field ที่ว่างได้
+    nullable_fields = {
+        "citizen_id",
+        "img_stu",
+        "prefix",
+        "first_name",
+        "last_name",
+        "gender",
+        "faculty_name",
+        "major_name",
+    }
+
+    for key, value in list(update_data.items()):
+        if key in nullable_fields and isinstance(value, str) and value.strip() == "":
+            update_data[key] = None
 
     # faculty
     if "faculty_id" in update_data or "faculty_name" in update_data:
@@ -356,17 +378,17 @@ def admin_update_student_with_user(
         if update_data.get("faculty_id") is not None:
             faculty = db.query(Faculty).filter(Faculty.id == update_data["faculty_id"]).first()
             if not faculty:
-                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสคณะ")
+                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
 
-        if update_data.get("faculty_name"):
+        if update_data.get("faculty_name") is not None:
             faculty_by_name = db.query(Faculty).filter(
                 Faculty.faculty_name == update_data["faculty_name"]
             ).first()
             if not faculty_by_name:
-                raise HTTPException(status_code=500, detail="ไม่พบชื่อคณะ")
+                raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
 
             if faculty and faculty.id != faculty_by_name.id:
-                raise HTTPException(status_code=500, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
+                raise HTTPException(status_code=400, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
 
             faculty = faculty_by_name
 
@@ -380,56 +402,67 @@ def admin_update_student_with_user(
         if update_data.get("major_id") is not None:
             major = db.query(Major).filter(Major.id == update_data["major_id"]).first()
             if not major:
-                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสสาขา")
+                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
 
-        if update_data.get("major_name"):
+        if update_data.get("major_name") is not None:
             major_by_name = db.query(Major).filter(
                 Major.major_name == update_data["major_name"]
             ).first()
             if not major_by_name:
-                raise HTTPException(status_code=500, detail="ไม่พบชื่อสาขา")
+                raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
 
             if major and major.id != major_by_name.id:
-                raise HTTPException(status_code=500, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
+                raise HTTPException(status_code=400, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
 
             major = major_by_name
 
         if major:
             student.major_id = major.id
 
-    # validate faculty-major
+    # validate major belongs to faculty
     if student.major_id and student.faculty_id:
         major_check = db.query(Major).filter(Major.id == student.major_id).first()
         if major_check and major_check.faculty_id != student.faculty_id:
-            raise HTTPException(status_code=500, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
+            raise HTTPException(status_code=400, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
 
     # update student fields
+    ignore_fields = {"faculty_id", "faculty_name", "major_id", "major_name", "updated_by_name", "user"}
+
     for key, value in update_data.items():
-        if key not in [
-            "faculty_id", "faculty_name",
-            "major_id", "major_name",
-            "updated_by_name",
-            "user_username", "user_password"
-        ]:
+        if key not in ignore_fields:
             setattr(student, key, value)
 
+    # สำคัญ: ถ้า citizen_id ว่าง ให้เป็น None ไม่ใช่ ""
+    if hasattr(student, "citizen_id") and student.citizen_id == "":
+        student.citizen_id = None
+
+    if hasattr(student, "img_stu") and student.img_stu == "":
+        student.img_stu = None
+
     # update user fields
+    user_data = update_data.get("user")
     user = db.query(User).filter(User.id == student.user_id).first()
-    if user:
-        if "user_username" in update_data and update_data["user_username"]:
+
+    if user and user_data:
+        new_username = user_data.get("username")
+        new_password = user_data.get("password")
+
+        if new_username is not None:
             existing_user = db.query(User).filter(
-                User.username == update_data["user_username"],
+                User.username == new_username,
                 User.id != user.id
             ).first()
             if existing_user:
-                raise HTTPException(status_code=500, detail=f"ชื่อผู้ใช้ถูกใช้งานไปแล้ว: {update_data['user_username']}")
-            user.username = update_data["user_username"]
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"ชื่อผู้ใช้ถูกใช้งานไปแล้ว: {new_username}"
+                )
+            user.username = new_username
 
-        if "user_password" in update_data and update_data["user_password"]:
-            user.password = update_data["user_password"]
+        if new_password is not None:
+            user.password = new_password
 
-        # sync full name
-        full_name = f"{student.first_name} {student.last_name}".strip()
+        full_name = f"{student.first_name or ''} {student.last_name or ''}".strip()
         user.name = full_name
         user.updated_by_id = admin.id
         user.updated_by_name = admin.name
@@ -437,8 +470,15 @@ def admin_update_student_with_user(
     student.updated_by_id = admin.id
     student.updated_by_name = admin.name
 
-    db.commit()
-    db.refresh(student)
+    try:
+        db.commit()
+        db.refresh(student)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"อัปเดตข้อมูลไม่สำเร็จ: {str(e.orig)}"
+        )
 
     student = (
         db.query(Student)
@@ -470,7 +510,8 @@ def admin_update_student_with_user(
         "updated_by_id": student.updated_by_id,
         "updated_by_name": student.updated_by_name,
         "user": {
-            "username": student.user.username if student.user else None
+            "username": student.user.username if student.user else None,
+            "password": student.user.password if student.user else None,
         }
     }
 
@@ -637,7 +678,8 @@ def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
                 "updated_by_id": student.updated_by_id,
                 "updated_by_name": student.updated_by_name,
                 "user": {
-                    "username": student.user.username if student.user else None
+                    "username": student.user.username if student.user else None,
+                    "password": student.user.password if student.user else None
                 }
             }
             for student in students

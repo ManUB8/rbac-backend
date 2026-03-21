@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional, Literal
 from datetime import date, time, datetime
 
@@ -109,8 +109,8 @@ class FacultyWithMajorsResponse(BaseModel):
 # =========================
 
 class StudentUserInfoResponse(BaseModel):
-    username: str
-    password: str
+    username: Optional[str] = None
+    password: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -151,6 +151,17 @@ class StudentDetailWithUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class StudentUserUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+    @field_validator("username", "password", mode="before")
+    @classmethod
+    def empty_user_string_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+    
 
 class StudentMajorListResponse(BaseModel):
     count_student: int
@@ -169,8 +180,25 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
     updated_by_name: str
-    user_username: Optional[str] = None
-    user_password: Optional[str] = None
+    user: Optional[StudentUserUpdateRequest] = None
+
+    @field_validator(
+        "citizen_id",
+        "img_stu",
+        "prefix",
+        "first_name",
+        "last_name",
+        "gender",
+        "faculty_name",
+        "major_name",
+        mode="before",
+    )
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+    
 
 class StudentUserCreate(BaseModel):
     username: str
@@ -219,6 +247,15 @@ class StudentUpdateRequest(BaseModel):
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
 
+
+class StudentUserResponse(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        
+        
 class StudentResponse(BaseModel):
     id: int
     student_id: str
@@ -241,6 +278,7 @@ class StudentResponse(BaseModel):
     deleted_by_name: Optional[str] = None
     deleted_at: Optional[datetime] = None
     is_deleted: Optional[bool] = False
+    user: Optional[StudentUserResponse] = None
 
     class Config:
         from_attributes = True
@@ -262,6 +300,7 @@ class ActivityCreateRequest(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
+    activity_status: bool
     created_by_name: str
 
 
@@ -276,6 +315,7 @@ class ActivityUpdateRequest(BaseModel):
     description: Optional[str] = None
     activity_img: Optional[str] = None
     updated_by_name: str
+    activity_status: bool
 
 
 class ActivityDeleteRequest(BaseModel):
