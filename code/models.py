@@ -153,6 +153,7 @@ class Student(Base):
 # =========================
 # Activity
 # =========================
+
 class Activity(Base):
     __tablename__ = "activities"
 
@@ -162,8 +163,11 @@ class Activity(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     hours = Column(Numeric(4, 2), nullable=False)
-    location = Column(String(255), nullable=True)   
+    location = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
+    activity_img = Column(Text, nullable=True)
+
+    activity_status = Column(Boolean, default=True)
 
     created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_by_name = Column(String(150), nullable=True)

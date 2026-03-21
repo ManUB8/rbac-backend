@@ -12,6 +12,7 @@ from schemas import (
     MajorResponse,
     FacultyWithMajorsCreate,
     FacultyWithMajorsResponse,
+    DeleteByAdminRequest,
 )
 
 router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
@@ -49,7 +50,7 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
 
 
 # =========================
-# CREATE FACULTY
+# CREATE FACULTY    
 # =========================
 @router.post("/faculties", response_model=FacultyResponse)
 def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
@@ -58,7 +59,7 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
     existing = db.query(Faculty).filter(Faculty.faculty_name == data.faculty_name).first()
     if existing:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"คณะนี้ถูกลงทะเบียนแล้ว: {data.faculty_name}"
         )
 
@@ -79,7 +80,7 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
 # =========================
 # GET ALL FACULTIES
 # =========================
-@router.get("/faculties", response_model=list[FacultyWithMajorsResponse])
+@router.get("/faculties-all", response_model=list[FacultyWithMajorsResponse])
 def get_all_faculties_with_majors(db: Session = Depends(get_db)):
     faculties = db.query(Faculty).options(joinedload(Faculty.majors)).all()
     return faculties
@@ -88,7 +89,7 @@ def get_all_faculties_with_majors(db: Session = Depends(get_db)):
 # =========================
 # GET FACULTY BY ID
 # =========================
-@router.get("/faculties/{faculty_id}", response_model=FacultyWithMajorsResponse)
+@router.get("/get-one/faculties/{faculty_id}", response_model=FacultyWithMajorsResponse)
 def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
     faculty = (
         db.query(Faculty)
@@ -106,7 +107,7 @@ def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
 # =========================
 # UPDATE FACULTY
 # =========================
-@router.patch("/faculties/{faculty_id}", response_model=FacultyResponse)
+@router.patch("/update/faculties/{faculty_id}", response_model=FacultyResponse)
 def update_faculty(
     faculty_id: int,
     data: FacultyUpdate,
@@ -139,25 +140,21 @@ def update_faculty(
 # =========================
 # DELETE FACULTY
 # =========================
-@router.delete("/faculties/{faculty_id}")
+
+@router.delete("/delete/faculties/{faculty_id}")
 def delete_faculty(
     faculty_id: int,
-    updated_by_name: str,
+    data: DeleteByAdminRequest,
     db: Session = Depends(get_db)
 ):
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if not faculty:
         raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
-    admin = get_admin_by_name(db, updated_by_name)
-    print("admin.id",admin.id)
-    print("admin.name",admin.name)
-    
-
+    admin = get_admin_by_name(db, data.updated_by_name)
 
     faculty_name = faculty.faculty_name
 
-    # อัปเดต audit ก่อนลบ
     faculty.updated_by_id = admin.id
     faculty.updated_by_name = admin.name
     db.flush()
@@ -168,7 +165,6 @@ def delete_faculty(
     return {
         "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
     }
-
 
 # =========================
 # CREATE MAJOR
@@ -210,7 +206,7 @@ def create_major(data: MajorCreate, db: Session = Depends(get_db)):
 # =========================
 # GET ALL MAJORS
 # =========================
-@router.get("/majors", response_model=list[MajorResponse])
+@router.get("/majors-all", response_model=list[MajorResponse])
 def get_all_majors(db: Session = Depends(get_db)):
     majors = db.query(Major).all()
     return majors
@@ -219,7 +215,7 @@ def get_all_majors(db: Session = Depends(get_db)):
 # =========================
 # GET MAJOR BY ID
 # =========================
-@router.get("/majors/{major_id}", response_model=MajorResponse)
+@router.get("/get-one/majors/{major_id}", response_model=MajorResponse)
 def get_major(major_id: int, db: Session = Depends(get_db)):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
@@ -256,7 +252,7 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
     )
     if existing_major:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"สาขานี้มีอยู่แล้วในคณะนี้: {new_major_name}"
         )
 
@@ -277,20 +273,21 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 # =========================
 # DELETE MAJOR
 # =========================
-@router.delete("/majors/{major_id}")
+@router.delete("/delete/majors/{major_id}")
 def delete_major(
     major_id: int,
-    updated_by_name: str,
+    data: DeleteByAdminRequest,
     db: Session = Depends(get_db)
 ):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
         raise HTTPException(status_code=500, detail="ไม่พบสาขา")
 
-    admin = get_admin_by_name(db, updated_by_name)
+    admin = get_admin_by_name(db, data.updated_by_name)
 
     major_name = major.major_name
 
+    # อัปเดต audit ก่อนลบ
     major.updated_by_id = admin.id
     major.updated_by_name = admin.name
     db.flush()
@@ -301,7 +298,6 @@ def delete_major(
     return {
         "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
     }
-
 
 # =========================
 # BULK CREATE FACULTIES WITH MAJORS
