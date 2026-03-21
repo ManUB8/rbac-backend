@@ -23,12 +23,12 @@ def admin_login(data: AdminLoginRequest, db: Session = Depends(get_db)):
 
     if not user:
         raise HTTPException(
-            status_code=404,detail=f"ไม่พบชื่อผู้ใช้นี้ในระบบ: {data.username}"
+            status_code=500,detail=f"ไม่พบชื่อผู้ใช้นี้ในระบบ: {data.username}"
         )
 
     if user.password != data.password:
         raise HTTPException(
-            status_code=404,detail=f"รหัสผ่านไม่ถูกต้องสำหรับชื่อผู้ใช้"
+            status_code=500,detail=f"รหัสผ่านไม่ถูกต้องสำหรับชื่อผู้ใช้"
         )
 
     if user.role != "admin":
