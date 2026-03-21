@@ -50,7 +50,7 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
 
 
 # =========================
-# CREATE FACULTY
+# CREATE FACULTY    
 # =========================
 @router.post("/faculties", response_model=FacultyResponse)
 def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
@@ -252,7 +252,7 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
     )
     if existing_major:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"สาขานี้มีอยู่แล้วในคณะนี้: {new_major_name}"
         )
 
@@ -273,30 +273,30 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 # =========================
 # DELETE MAJOR
 # =========================
-
-@router.delete("/faculties/{faculty_id}")
-def delete_faculty(
-    faculty_id: int,
+@router.delete("/majors/{major_id}")
+def delete_major(
+    major_id: int,
     data: DeleteByAdminRequest,
     db: Session = Depends(get_db)
 ):
-    faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
-    if not faculty:
-        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
+    major = db.query(Major).filter(Major.id == major_id).first()
+    if not major:
+        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
-    faculty_name = faculty.faculty_name
+    major_name = major.major_name
 
-    faculty.updated_by_id = admin.id
-    faculty.updated_by_name = admin.name
+    # อัปเดต audit ก่อนลบ
+    major.updated_by_id = admin.id
+    major.updated_by_name = admin.name
     db.flush()
 
-    db.delete(faculty)
+    db.delete(major)
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
+        "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
     }
 
 # =========================

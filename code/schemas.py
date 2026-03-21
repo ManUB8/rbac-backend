@@ -67,6 +67,7 @@ class MajorResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 # =========================
 # Faculty + majors
 # =========================
