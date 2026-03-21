@@ -57,9 +57,7 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
 # =========================================================
 @router.post("/create", response_model=ActivityMessageResponse)
 def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
-    """
-    สร้างกิจกรรมใหม่ (เฉพาะ admin)
-    """
+
     admin = get_admin_by_name(db, data.created_by_name)
 
     if data.start_time >= data.end_time:
@@ -77,6 +75,8 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         location=data.location,
         description=data.description,
         activity_img=data.activity_img,
+        active_status=True,
+
         created_by_id=admin.id,
         created_by_name=admin.name,
         updated_by_id=admin.id,
@@ -88,22 +88,21 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
     db.refresh(activity)
 
     return {
-        "detail": f"สร้างกิจกรรมสำเร็จ",
+        "detail": f"แอดมิน {admin.name} สร้างกิจกรรมสำเร็จ",
         "data": activity
     }
-
 
 # =========================================================
 # GET
 # =========================================================
 @router.get("/get-all", response_model=list[ActivityResponse])
 def get_all_activities(db: Session = Depends(get_db)):
+    
+    
     """
     ดึงกิจกรรมทั้งหมด
     """
-    activities = db.query(Activity).order_by(Activity.id.desc()).all()
-    return activities
-
+    return db.query(Activity).filter(Activity.activity_status == True).all()
 
 @router.get("/get-one/{activity_id}", response_model=ActivityResponse)
 def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
@@ -113,9 +112,10 @@ def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
 
     return activity
+
 
 
 # =========================================================
@@ -127,17 +127,19 @@ def update_activity(
     data: ActivityUpdateRequest,
     db: Session = Depends(get_db)
 ):
-    #  เช็คว่า id ตรงกัน
     if activity_id != data.activity_id:
         raise HTTPException(
             status_code=500,
-            detail="activity_id ใน URL และ body ไม่ตรงกัน"
+            detail="activity_id ไม่ตรงกัน"
         )
 
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    activity = db.query(Activity).filter(
+        Activity.id == activity_id,
+        Activity.active_status == True
+    ).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
@@ -147,7 +149,10 @@ def update_activity(
     new_end_time = update_data.get("end_time", activity.end_time)
 
     if new_start_time >= new_end_time:
-        raise HTTPException(status_code=500, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
+        raise HTTPException(
+            status_code=500,
+            detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด"
+        )
 
     for key, value in update_data.items():
         if key not in ["updated_by_name", "activity_id"]:
@@ -160,7 +165,7 @@ def update_activity(
     db.refresh(activity)
 
     return {
-        "detail": f"แก้ไขกิจกรรมสำเร็จ",
+        "detail": f"แอดมิน {admin.name} แก้ไขกิจกรรมสำเร็จ",
         "data": activity
     }
 
@@ -174,29 +179,31 @@ def delete_activity(
     data: ActivityDeleteRequest,
     db: Session = Depends(get_db)
 ):
-    #  เช็ค id
     if activity_id != data.activity_id:
         raise HTTPException(
             status_code=500,
-            detail="activity_id ใน URL และ body ไม่ตรงกัน"
+            detail="activity_id ไม่ตรงกัน"
         )
 
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
-    name = activity.activity_name
-
+    activity.activity_status = False
     activity.updated_by_id = admin.id
     activity.updated_by_name = admin.name
-    db.flush()
 
-    db.delete(activity)
     db.commit()
+    db.refresh(activity)
 
     return {
-        "detail": f"ลบกิจกรรมสำเร็จ: {name}"
-    }
+    "detail": f"แอดมิน {admin.name} ลบกิจกรรมสำเร็จ",
+    "activity_id": activity.id,
+    "activity_status": activity.activity_status,
+    "updated_by_id": activity.updated_by_id,
+    "updated_by_name": activity.updated_by_name,
+}
+

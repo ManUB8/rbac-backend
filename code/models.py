@@ -167,6 +167,8 @@ class Activity(Base):
     description = Column(Text, nullable=True)
     activity_img = Column(Text, nullable=True)
 
+    activity_status = Column(Boolean, default=True)
+
     created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_by_name = Column(String(150), nullable=True)
     updated_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

@@ -110,6 +110,7 @@ class FacultyWithMajorsResponse(BaseModel):
 
 class StudentUserInfoResponse(BaseModel):
     username: str
+    password: str
 
     class Config:
         from_attributes = True
@@ -249,11 +250,9 @@ class StudentMessageResponse(BaseModel):
     detail: str
     data: StudentResponse
 
-
 # =========================
 # Activity
 # =========================
-
 class ActivityCreateRequest(BaseModel):
     activity_name: str
     activity_date: date
@@ -264,6 +263,7 @@ class ActivityCreateRequest(BaseModel):
     description: Optional[str] = None
     activity_img: Optional[str] = None
     created_by_name: str
+
 
 class ActivityUpdateRequest(BaseModel):
     activity_id: int
@@ -277,9 +277,11 @@ class ActivityUpdateRequest(BaseModel):
     activity_img: Optional[str] = None
     updated_by_name: str
 
+
 class ActivityDeleteRequest(BaseModel):
     activity_id: int
     updated_by_name: str
+
 
 class ActivityResponse(BaseModel):
     id: int
@@ -291,6 +293,8 @@ class ActivityResponse(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
+    activity_status: bool
+
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
@@ -307,9 +311,24 @@ class ActivityMessageResponse(BaseModel):
 
 class ActivityDeleteResponse(BaseModel):
     detail: str
+    activity_id: int
+    activity_status: bool
+    updated_by_id: Optional[int] = None
+    updated_by_name: Optional[str] = None
+    
 # =========================
 # User
 # =========================
+
+class UserDeleteRequest(BaseModel):
+    deleted_by_name: str
+    deleted_user_id: int
+
+class UserDeleteResponse(BaseModel):
+    detail: str
+    deleted_by: str
+    deleted_user: str
+
 class UserCreateRequest(BaseModel):
     username: str
     password: str
@@ -352,10 +371,6 @@ class UserResponse(BaseModel):
 class UserMessageResponse(BaseModel):
     detail: str
     data: UserResponse
-
-
-class UserDeleteResponse(BaseModel):
-    detail: str
 
 class AdminLoginRequest(BaseModel):
     username: str

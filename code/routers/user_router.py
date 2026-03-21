@@ -8,6 +8,7 @@ from schemas import (
     UserUpdateRequest,
     UserResponse,
     UserMessageResponse,
+    UserDeleteRequest,
     UserDeleteResponse,
 )
 
@@ -45,11 +46,11 @@ def create_user(
     # เช็ค username ซ้ำ
     existing_user = db.query(User).filter(User.username == data.username).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(status_code=500, detail="Username already exists")
 
     # 🔥 เช็ค creator จาก name → เอา id จริงมาใช้
     if not data.created_by_name:
-        raise HTTPException(status_code=400, detail="created_by_name is required")
+        raise HTTPException(status_code=500, detail="created_by_name is required")
 
     creator = db.query(User).filter(
         User.name == data.created_by_name,
@@ -128,11 +129,11 @@ def update_user(
     if "username" in update_data and update_data["username"] != user.username:
         existing_user = db.query(User).filter(User.username == update_data["username"]).first()
         if existing_user:
-            raise HTTPException(status_code=400, detail="Username already exists")
+            raise HTTPException(status_code=500, detail="Username already exists")
 
     # เช็ค updater
     if not data.updated_by_name:
-        raise HTTPException(status_code=400, detail="updated_by_name is required")
+        raise HTTPException(status_code=500, detail="updated_by_name is required")
 
     updater = db.query(User).filter(
         User.name == data.updated_by_name,
@@ -163,21 +164,63 @@ def update_user(
 @router.delete("/delete/{user_id}", response_model=UserDeleteResponse)
 def delete_user(
     user_id: int,
+    data: UserDeleteRequest,
     db: Session = Depends(get_db),
-    current_user: User | None = Depends(get_current_user),
 ):
+    
+    # 🔥 เช็คว่า ID ใน URL กับ body ต้องตรงกัน
+    if user_id != data.deleted_user_id:
+        raise HTTPException(
+            status_code=500,
+            detail="user_id ใน URL และ body ไม่ตรงกัน"
+        )
+
+    # -----------------------------
+    # หา admin
+    # -----------------------------
+    admin = (
+        db.query(User)
+        .filter(
+            User.name == data.deleted_by_name,
+            User.role == "admin",
+            User.is_active == True
+        )
+        .first()
+    )
+
+    if not admin:
+        raise HTTPException(
+            status_code=403,
+            detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมิน: {data.deleted_by_name}"
+        )
+
+    # -----------------------------
+    # หา user ที่จะลบ
+    # -----------------------------
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=500, detail="User not found")
 
-    # กันลบตัวเอง ถ้ามี current_user
-    if current_user and user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    # -----------------------------
+    # กันลบตัวเอง
+    # -----------------------------
+    if user.id == admin.id:
+        raise HTTPException(
+            status_code=500,
+            detail="ไม่สามารถลบบัญชีของตัวเองได้"
+        )
 
+    # -----------------------------
+    # soft delete
+    # -----------------------------
     user.is_active = False
-    user.updated_by_id = current_user.id if current_user else None
-    user.updated_by_name = current_user.name if current_user else None
+    user.updated_by_id = admin.id
+    user.updated_by_name = admin.name
 
     db.commit()
 
-    return {"detail": "ปิดการใช้งานผู้ใช้สำเร็จ"}
+    return {
+        "detail": "ปิดการใช้งานผู้ใช้สำเร็จ",
+        "deleted_by": admin.name,
+        "deleted_user": user.name,
+    }
