@@ -6,6 +6,10 @@ from datetime import   datetime
 # =========================
 # Student
 # =========================
+
+class AdminActionRequest(BaseModel):
+    updated_by_name: str
+
 class StudentUserCreate(BaseModel):
     username: str
     password: str
@@ -106,6 +110,19 @@ class StudentDeleteRequest(BaseModel):
 class StudentDeleteResponse(BaseModel):
     detail: str
 
+class MajorStudentSummaryRequest(BaseModel):
+    faculties_id: int
+    updated_by_name: str
+
+
+class MajorStudentSummaryItemResponse(BaseModel):
+    major_name: str
+    major_id: int
+    count_student: int
+
+class FacultyStudentSummaryRequest(BaseModel):
+    updated_by_name: str
+
 
 class FacultyStudentSummaryResponse(BaseModel):
     faculties_name: str
@@ -115,10 +132,10 @@ class FacultyStudentSummaryResponse(BaseModel):
 
 
 class MajorStudentSummaryResponse(BaseModel):
-    major_name: str
-    major_id: int
-    count_student: int
-
+    detail: str
+    faculties_id: int
+    faculties_name: str
+    data: List[MajorStudentSummaryItemResponse]
 
 class StudentUserInfoResponse(BaseModel):
     username: Optional[str] = None
@@ -126,7 +143,6 @@ class StudentUserInfoResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class StudentDetailWithUserResponse(BaseModel):
     id: int
@@ -151,8 +167,14 @@ class StudentDetailWithUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class StudentMajorListRequest(BaseModel):
+    major_id: int
+    updated_by_name: str
 
 class StudentMajorListResponse(BaseModel):
+    detail: str
+    major_id: int
+    major_name: str
     count_student: int
     student: List[StudentDetailWithUserResponse]
 
@@ -199,3 +221,21 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
         if isinstance(v, str) and v.strip() == "":
             return None
         return v
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

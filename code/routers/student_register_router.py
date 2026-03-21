@@ -15,12 +15,13 @@ from schemas.schemas_student import (
     StudentDeleteResponse,
     FacultyStudentSummaryResponse,
     MajorStudentSummaryResponse,
+    MajorStudentSummaryItemResponse,
     StudentMajorListResponse,
     StudentAdminUpdateWithUserRequest,
     StudentDetailWithUserResponse,
 )
-
 router = APIRouter(prefix="/student/v1", tags=["Student Register"])
+
 
 
 def get_db():
@@ -41,8 +42,13 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
         )
         .first()
     )
+
     if not admin:
-        raise HTTPException(status_code=403, detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}")
+        raise HTTPException(
+            status_code=403,
+            detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}"
+        )
+
     return admin
 
 def resolve_faculty_and_major(db: Session, faculty_id=None, faculty_name=None, major_id=None, major_name=None):
@@ -344,11 +350,11 @@ def admin_update_student_with_user(
         .first()
     )
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
     admin = get_admin_by_name(db, data.updated_by_name)
     if not admin:
-        raise HTTPException(status_code=404, detail="ไม่พบผู้ดูแลระบบ")
+        raise HTTPException(status_code=500, detail="ไม่พบผู้ดูแลระบบ")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -375,17 +381,17 @@ def admin_update_student_with_user(
         if update_data.get("faculty_id") is not None:
             faculty = db.query(Faculty).filter(Faculty.id == update_data["faculty_id"]).first()
             if not faculty:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสคณะ")
 
         if update_data.get("faculty_name") is not None:
             faculty_by_name = db.query(Faculty).filter(
                 Faculty.faculty_name == update_data["faculty_name"]
             ).first()
             if not faculty_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อคณะ")
 
             if faculty and faculty.id != faculty_by_name.id:
-                raise HTTPException(status_code=400, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
+                raise HTTPException(status_code=500, detail="เลขรหัสคณะและชื่อคณะไม่ตรงกัน")
 
             faculty = faculty_by_name
 
@@ -399,17 +405,17 @@ def admin_update_student_with_user(
         if update_data.get("major_id") is not None:
             major = db.query(Major).filter(Major.id == update_data["major_id"]).first()
             if not major:
-                raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบเลขรหัสสาขา")
 
         if update_data.get("major_name") is not None:
             major_by_name = db.query(Major).filter(
                 Major.major_name == update_data["major_name"]
             ).first()
             if not major_by_name:
-                raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
+                raise HTTPException(status_code=500, detail="ไม่พบชื่อสาขา")
 
             if major and major.id != major_by_name.id:
-                raise HTTPException(status_code=400, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
+                raise HTTPException(status_code=500, detail="เลขรหัสสาขาและชื่อสาขาไม่ตรงกัน")
 
             major = major_by_name
 
@@ -420,7 +426,7 @@ def admin_update_student_with_user(
     if student.major_id and student.faculty_id:
         major_check = db.query(Major).filter(Major.id == student.major_id).first()
         if major_check and major_check.faculty_id != student.faculty_id:
-            raise HTTPException(status_code=400, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
+            raise HTTPException(status_code=500, detail="สาขาที่เลือกไม่ตรงกับคณะที่มีอยู่")
 
     # update student fields
     ignore_fields = {"faculty_id", "faculty_name", "major_id", "major_name", "updated_by_name", "user"}
@@ -451,7 +457,7 @@ def admin_update_student_with_user(
             ).first()
             if existing_user:
                 raise HTTPException(
-                    status_code=400,
+                    status_code=500,
                     detail=f"ชื่อผู้ใช้ถูกใช้งานไปแล้ว: {new_username}"
                 )
             user.username = new_username
@@ -473,7 +479,7 @@ def admin_update_student_with_user(
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"อัปเดตข้อมูลไม่สำเร็จ: {str(e.orig)}"
         )
 
@@ -548,7 +554,7 @@ def delete_student(
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบนักศึกษาสำเร็จ รหัสนิสิต: {student.student_id}"
+        "detail": f"ลบนักศึกษาสำเร็จ รหัสนิสิต: {student.student_id}"
 }
     
 #-------------------------
@@ -572,6 +578,8 @@ def get_all_faculties_student(db: Session = Depends(get_db)):
         })
 
     return results
+
+
 
 
 @router.get("/all-students", response_model=list[StudentResponse])
@@ -616,7 +624,7 @@ def get_student(student_db_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
     return student
 
-@router.get("/get-all/major/{faculties_id}", response_model=list[MajorStudentSummaryResponse])
+@router.get("/get-all/major/{faculties_id}", response_model=list[MajorStudentSummaryItemResponse])
 def get_all_major_by_faculty(faculties_id: int, db: Session = Depends(get_db)):
     faculty = db.query(Faculty).filter(Faculty.id == faculties_id).first()
     if not faculty:
@@ -636,6 +644,7 @@ def get_all_major_by_faculty(faculties_id: int, db: Session = Depends(get_db)):
 
     return results
 
+
 @router.get("/get-all/student-major/{major_id}", response_model=StudentMajorListResponse)
 def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
     major = db.query(Major).filter(Major.id == major_id).first()
@@ -654,6 +663,9 @@ def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
     )
 
     return {
+        "detail": "ดึงข้อมูลนิสิตตามสาขาสำเร็จ",
+        "major_id": major.id,
+        "major_name": major.major_name,
         "count_student": len(students),
         "student": [
             {

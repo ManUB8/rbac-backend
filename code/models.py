@@ -189,10 +189,10 @@ class StudentActivity(Base):
     student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
     activity_id = Column(Integer, ForeignKey("activities.id", ondelete="CASCADE"), nullable=False)
 
-    attendance_status = Column(String(20), nullable=False, default="ไม่เข้าร่วม")
-    checkin_at = Column(TIMESTAMP, nullable=True)
+    checkin_at = Column(DateTime, nullable=True)
 
-    active_status = Column(Boolean, default=True)
+
+    attendance_status = Column(String(20), nullable=False, default="ไม่เข้าร่วม")
 
     created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_by_name = Column(String(150), nullable=True)
@@ -205,4 +205,9 @@ class StudentActivity(Base):
     student = relationship("Student", foreign_keys=[student_id])
     activity = relationship("Activity", foreign_keys=[activity_id])
 
-    __table_args__ = ()
+    __table_args__ = (UniqueConstraint("student_id", "activity_id", name="uq_student_activity"),
+        CheckConstraint(
+            "attendance_status IN ('เข้าร่วม', 'ไม่เข้าร่วม')",
+            name="chk_attendance_status"
+        ),
+    )

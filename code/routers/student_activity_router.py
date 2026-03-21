@@ -80,7 +80,7 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "id": item.id,
         "student_id": student.id,
         "activity_id": activity.id,
-        "student_code": student.student_id,
+        "student_id": student.student_id,
         "full_name": f"{student.first_name} {student.last_name}",
         "activity_name": activity.activity_name,
         "activity_date": activity.activity_date,
@@ -94,7 +94,6 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "registered_at": registered_time,
         "registered_at_text": format_registered_at_thai(registered_time),
         "checkin_at": item.checkin_at,
-        "active_status": item.active_status,
         "created_by_id": item.created_by_id,
         "created_by_name": item.created_by_name,
         "updated_by_id": item.updated_by_id,
@@ -114,7 +113,7 @@ def create_student_activity(
 ):
     admin = get_admin_by_name(db, body.created_by_name)
 
-    student = db.query(Student).filter(Student.student_id == body.student_code).first()
+    student = db.query(Student).filter(Student.student_id == body.student_id).first()
     if not student:
         raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
@@ -127,7 +126,6 @@ def create_student_activity(
         .filter(
             StudentActivity.student_id == student.id,
             StudentActivity.activity_id == activity.id,
-            StudentActivity.active_status == True
         )
         .first()
     )
@@ -141,11 +139,6 @@ def create_student_activity(
         activity_id=activity.id,
         attendance_status="เข้าร่วม",
         checkin_at=now,
-        active_status=True,
-        created_by_id=admin.id,
-        created_by_name=admin.name,
-        updated_by_id=admin.id,
-        updated_by_name=admin.name,
     )
 
     db.add(new_item)
@@ -153,7 +146,7 @@ def create_student_activity(
     db.refresh(new_item)
 
     return {
-        "detail": f"แอดมิน {admin.name} ลงทะเบียนเข้าร่วมกิจกรรมเรียบร้อยแล้ว",
+        "detail": f"ลงทะเบียนเข้าร่วมกิจกรรมเรียบร้อยแล้ว",
         "data": build_student_activity_response(new_item, student, activity)
     }
 
@@ -165,14 +158,14 @@ def create_student_activity(
 def get_all_student_activities(db: Session = Depends(get_db)):
     items = (
         db.query(StudentActivity)
-        .options(
-            joinedload(StudentActivity.student),
-            joinedload(StudentActivity.activity),
+            .options(
+                joinedload(StudentActivity.student),
+                joinedload(StudentActivity.activity),
         )
-        .filter(StudentActivity.active_status == True)
         .order_by(StudentActivity.id.desc())
         .all()
-    )
+)
+    
 
     result = []
     for item in items:
@@ -188,9 +181,9 @@ def get_all_student_activities(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/get-one", response_model=StudentActivityResponse)
+@router.get("/get-one/{student_activity_id}", response_model=StudentActivityResponse)
 def get_student_activity(
-    body: StudentActivityGetOneRequest,
+    student_activity_id: int,
     db: Session = Depends(get_db)
 ):
     item = (
@@ -199,15 +192,12 @@ def get_student_activity(
             joinedload(StudentActivity.student),
             joinedload(StudentActivity.activity),
         )
-        .filter(
-            StudentActivity.id == body.student_activity_id,
-            StudentActivity.active_status == True
-        )
+        .filter(StudentActivity.id == student_activity_id)
         .first()
     )
 
     if not item:
-        raise HTTPException(status_code=500, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
+        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
 
     return {
         "detail": "ดึงข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
@@ -235,7 +225,6 @@ def update_student_activity(
         db.query(StudentActivity)
         .filter(
             StudentActivity.id == student_activity_id,
-            StudentActivity.active_status == True
         )
         .first()
     )
@@ -250,12 +239,12 @@ def update_student_activity(
     if not activity:
         raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
 
-    if body.student_code is not None:
-        new_student = db.query(Student).filter(Student.student_id == body.student_code).first()
-        if not new_student:
-            raise HTTPException(status_code=500, detail="ไม่พบนิสิตจากรหัสนิสิตใหม่")
-        item.student_id = new_student.id
-        student = new_student
+    if body.student_id is not None:
+        new_student = db.query(Student).filter(Student.student_id == body.student_id).first()
+    if not new_student:
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิตจากรหัสนิสิตใหม่")
+    item.student_id = new_student.id
+    student = new_student
 
     if body.activity_id is not None:
         new_activity = db.query(Activity).filter(Activity.id == body.activity_id).first()
@@ -272,22 +261,21 @@ def update_student_activity(
             )
 
         item.attendance_status = body.attendance_status
-
         if body.attendance_status == "เข้าร่วม":
             item.checkin_at = datetime.now()
         else:
             item.checkin_at = None
+
 
     duplicate = (
         db.query(StudentActivity)
         .filter(
             StudentActivity.student_id == item.student_id,
             StudentActivity.activity_id == item.activity_id,
-            StudentActivity.id != item.id,
-            StudentActivity.active_status == True
-        )
-        .first()
+            StudentActivity.id != item.id
     )
+    .first()
+)
     if duplicate:
         raise HTTPException(status_code=500, detail="มีข้อมูลนิสิตและกิจกรรมนี้อยู่แล้ว")
 
@@ -299,13 +287,13 @@ def update_student_activity(
     db.refresh(item)
 
     return {
-        "detail": f"แอดมิน {admin.name} แก้ไขข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
+        "detail": f"แก้ไขข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
         "data": build_student_activity_response(item, student, activity)
     }
 
 
 # =========================================================
-# DELETE (SOFT DELETE)
+# DELETE 
 # =========================================================
 @router.delete("/delete/{student_activity_id}", response_model=StudentActivityDeleteResponse)
 def delete_student_activity(
@@ -325,18 +313,14 @@ def delete_student_activity(
     if not item:
         raise HTTPException(status_code=500, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
 
-    item.active_status = False
-    item.updated_by_id = admin.id
-    item.updated_by_name = admin.name
-    item.updated_at = datetime.now()
+    deleted_id = item.id
 
+    db.delete(item)
     db.commit()
-    db.refresh(item)
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
-        "student_activity_id": item.id,
-        "active_status": item.active_status,
-        "updated_by_id": item.updated_by_id,
-        "updated_by_name": item.updated_by_name,
+        "detail": f"ลบข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
+        "student_activity_id": deleted_id,
+        "updated_by_id": admin.id,
+        "updated_by_name": admin.name,
     }

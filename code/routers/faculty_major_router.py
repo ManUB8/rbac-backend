@@ -162,7 +162,7 @@ def delete_faculty(
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
+        "detail": f"ลบคณะสำเร็จ: {faculty_name}"
     }
 
 # =========================
@@ -295,7 +295,7 @@ def delete_major(
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
+        "detail": f"ลบสาขาสำเร็จ: {major_name}"
     }
 
 # =========================

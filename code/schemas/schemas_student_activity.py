@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import  Optional
+from datetime import datetime
 
 
 # =========================
@@ -21,6 +22,7 @@ class StudentActivityUpdateRequest(BaseModel):
     student_id: Optional[str] = None
     activity_id: Optional[int] = None
     attendance_status: Optional[str] = None
+    checkin_at: Optional[datetime] = None
     updated_by_name: str
 
 
@@ -42,6 +44,5 @@ class StudentActivityListResponse(BaseModel):
 class StudentActivityDeleteResponse(BaseModel):
     detail: str
     student_activity_id: int
-    active_status: bool
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
