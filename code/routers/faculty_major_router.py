@@ -59,7 +59,7 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
     existing = db.query(Faculty).filter(Faculty.faculty_name == data.faculty_name).first()
     if existing:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"คณะนี้ถูกลงทะเบียนแล้ว: {data.faculty_name}"
         )
 
@@ -80,7 +80,7 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
 # =========================
 # GET ALL FACULTIES
 # =========================
-@router.get("/faculties", response_model=list[FacultyWithMajorsResponse])
+@router.get("/faculties-all", response_model=list[FacultyWithMajorsResponse])
 def get_all_faculties_with_majors(db: Session = Depends(get_db)):
     faculties = db.query(Faculty).options(joinedload(Faculty.majors)).all()
     return faculties
@@ -89,7 +89,7 @@ def get_all_faculties_with_majors(db: Session = Depends(get_db)):
 # =========================
 # GET FACULTY BY ID
 # =========================
-@router.get("/faculties/{faculty_id}", response_model=FacultyWithMajorsResponse)
+@router.get("/get-one/faculties/{faculty_id}", response_model=FacultyWithMajorsResponse)
 def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
     faculty = (
         db.query(Faculty)
@@ -107,7 +107,7 @@ def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
 # =========================
 # UPDATE FACULTY
 # =========================
-@router.patch("/faculties/{faculty_id}", response_model=FacultyResponse)
+@router.patch("/update/faculties/{faculty_id}", response_model=FacultyResponse)
 def update_faculty(
     faculty_id: int,
     data: FacultyUpdate,
@@ -141,7 +141,7 @@ def update_faculty(
 # DELETE FACULTY
 # =========================
 
-@router.delete("/faculties/{faculty_id}")
+@router.delete("/delete/faculties/{faculty_id}")
 def delete_faculty(
     faculty_id: int,
     data: DeleteByAdminRequest,
@@ -206,7 +206,7 @@ def create_major(data: MajorCreate, db: Session = Depends(get_db)):
 # =========================
 # GET ALL MAJORS
 # =========================
-@router.get("/majors", response_model=list[MajorResponse])
+@router.get("/majors-all", response_model=list[MajorResponse])
 def get_all_majors(db: Session = Depends(get_db)):
     majors = db.query(Major).all()
     return majors
@@ -215,7 +215,7 @@ def get_all_majors(db: Session = Depends(get_db)):
 # =========================
 # GET MAJOR BY ID
 # =========================
-@router.get("/majors/{major_id}", response_model=MajorResponse)
+@router.get("/get-one/majors/{major_id}", response_model=MajorResponse)
 def get_major(major_id: int, db: Session = Depends(get_db)):
     major = db.query(Major).filter(Major.id == major_id).first()
     if not major:
@@ -273,7 +273,7 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 # =========================
 # DELETE MAJOR
 # =========================
-@router.delete("/majors/{major_id}")
+@router.delete("/delete/majors/{major_id}")
 def delete_major(
     major_id: int,
     data: DeleteByAdminRequest,

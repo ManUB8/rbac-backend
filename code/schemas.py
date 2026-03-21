@@ -72,7 +72,6 @@ class MajorResponse(BaseModel):
 # Faculty + majors
 # =========================
 
-
 class MajorInFacultyResponse(BaseModel):
     id: int
     major_name: str
@@ -108,11 +107,74 @@ class FacultyWithMajorsResponse(BaseModel):
 # =========================
 # Student
 # =========================
+
+class StudentUserInfoResponse(BaseModel):
+    username: str
+
+    class Config:
+        from_attributes = True
+
+class FacultyStudentSummaryResponse(BaseModel):
+    faculties_name: str
+    faculties_id: int
+    count_major: int
+    count_student: int
+
+
+class MajorStudentSummaryResponse(BaseModel):
+    major_name: str
+    major_id: int
+    count_student: int
+
+
+class StudentDetailWithUserResponse(BaseModel):
+    id: int
+    student_id: str
+    prefix: Optional[str] = None
+    first_name: str
+    last_name: str
+    citizen_id: Optional[str] = None
+    gender: Optional[str] = None
+    faculty_id: int
+    major_id: int
+    user_id: int
+    faculty_name: Optional[str] = None
+    major_name: Optional[str] = None
+    img_stu: Optional[str] = None
+    created_by_id: Optional[int] = None
+    created_by_name: Optional[str] = None
+    updated_by_id: Optional[int] = None
+    updated_by_name: Optional[str] = None
+    user: StudentUserInfoResponse
+
+    class Config:
+        from_attributes = True
+
+
+class StudentMajorListResponse(BaseModel):
+    count_student: int
+    student: List[StudentDetailWithUserResponse]
+
+
+class StudentAdminUpdateWithUserRequest(BaseModel):
+    prefix: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    citizen_id: Optional[str] = None
+    gender: Optional[str] = None
+    faculty_id: Optional[int] = None
+    major_id: Optional[int] = None
+    faculty_name: Optional[str] = None
+    major_name: Optional[str] = None
+    img_stu: Optional[str] = None
+    updated_by_name: str
+    user_username: Optional[str] = None
+    user_password: Optional[str] = None
+
 class StudentUserCreate(BaseModel):
     username: str
     password: str
     name: Optional[str] = None
-
 
 class StudentRegisterRequest(BaseModel):
     student_id: str
@@ -121,19 +183,15 @@ class StudentRegisterRequest(BaseModel):
     last_name: str
     citizen_id: Optional[str] = None
     gender: Optional[str] = None
-
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     faculty_id: Optional[int] = None
     major_id: Optional[int] = None
-
     img_stu: Optional[str] = None
     user: StudentUserCreate
 
-
 class StudentAdminCreateRequest(StudentRegisterRequest):
     created_by_name: str
-
 
 class StudentAdminUpdateRequest(BaseModel):
     prefix: Optional[str] = None
@@ -160,7 +218,6 @@ class StudentUpdateRequest(BaseModel):
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
 
-
 class StudentResponse(BaseModel):
     id: int
     student_id: str
@@ -169,28 +226,20 @@ class StudentResponse(BaseModel):
     last_name: str
     citizen_id: Optional[str] = None
     gender: Optional[str] = None
-
     faculty_id: int
     major_id: int
     user_id: int
-
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
-
     img_stu: Optional[str] = None
-
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
-
     deleted_by_id: Optional[int] = None
     deleted_by_name: Optional[str] = None
     deleted_at: Optional[datetime] = None
     is_deleted: Optional[bool] = False
-
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -204,6 +253,7 @@ class StudentMessageResponse(BaseModel):
 # =========================
 # Activity
 # =========================
+
 class ActivityCreateRequest(BaseModel):
     activity_name: str
     activity_date: date
@@ -212,9 +262,11 @@ class ActivityCreateRequest(BaseModel):
     hours: float
     location: Optional[str] = None
     description: Optional[str] = None
-
+    activity_img: Optional[str] = None
+    created_by_name: str
 
 class ActivityUpdateRequest(BaseModel):
+    activity_id: int
     activity_name: Optional[str] = None
     activity_date: Optional[date] = None
     start_time: Optional[time] = None
@@ -222,7 +274,12 @@ class ActivityUpdateRequest(BaseModel):
     hours: Optional[float] = None
     location: Optional[str] = None
     description: Optional[str] = None
+    activity_img: Optional[str] = None
+    updated_by_name: str
 
+class ActivityDeleteRequest(BaseModel):
+    activity_id: int
+    updated_by_name: str
 
 class ActivityResponse(BaseModel):
     id: int
@@ -233,28 +290,23 @@ class ActivityResponse(BaseModel):
     hours: float
     location: Optional[str] = None
     description: Optional[str] = None
-
+    activity_img: Optional[str] = None
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
-
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
-
 class ActivityMessageResponse(BaseModel):
     detail: str
     data: ActivityResponse
 
-
 class ActivityDeleteResponse(BaseModel):
     detail: str
-
-
 # =========================
 # User
 # =========================

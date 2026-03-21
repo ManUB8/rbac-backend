@@ -98,7 +98,7 @@ def get_users(
 # ---------------------------------------------------
 # GET USER BY ID
 # ---------------------------------------------------
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/get-one/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -112,7 +112,7 @@ def get_user(
 # ---------------------------------------------------
 # UPDATE USER
 # ---------------------------------------------------
-@router.put("/{user_id}", response_model=UserResponse)
+@router.patch("/update/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: int,
     data: UserUpdateRequest,
@@ -160,7 +160,7 @@ def update_user(
 # DELETE USER
 # soft delete = ปิดการใช้งาน
 # ---------------------------------------------------
-@router.delete("/{user_id}", response_model=UserDeleteResponse)
+@router.delete("/delete/{user_id}", response_model=UserDeleteResponse)
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
