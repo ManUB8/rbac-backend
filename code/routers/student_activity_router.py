@@ -80,7 +80,7 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "id": item.id,
         "student_id": student.id,
         "activity_id": activity.id,
-        "student_id": student.student_id,
+        "student_code": student.student_id,
         "full_name": f"{student.first_name} {student.last_name}",
         "activity_name": activity.activity_name,
         "activity_date": activity.activity_date,
@@ -94,14 +94,12 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "registered_at": registered_time,
         "registered_at_text": format_registered_at_thai(registered_time),
         "checkin_at": item.checkin_at,
+
         "created_by_id": item.created_by_id,
         "created_by_name": item.created_by_name,
         "updated_by_id": item.updated_by_id,
         "updated_by_name": item.updated_by_name,
-        "created_at": item.created_at,
-        "updated_at": item.updated_at,
     }
-
 
 # =========================================================
 # POST
