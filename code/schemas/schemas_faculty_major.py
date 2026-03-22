@@ -1,11 +1,14 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from typing import List, Optional
-from datetime import  datetime
+
+
+class DeleteByAdminRequest(BaseModel):
+    updated_by_name: str
+
 
 # =========================
 # Faculty
 # =========================
-
 class FacultyCreate(BaseModel):
     faculty_name: str
     created_by_name: str
@@ -17,27 +20,24 @@ class FacultyUpdate(BaseModel):
 
 
 class FacultyResponse(BaseModel):
-    id: int
+    faculty_id: int
     faculty_name: str
 
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    model_config = {
+        "from_attributes": True
+    }
 
-    class Config:
-        from_attributes = True
-        
-class DeleteByAdminRequest(BaseModel):
-    updated_by_name: str
 
 # =========================
 # Major
 # =========================
-
 class MajorCreate(BaseModel):
     major_name: str
     faculty_id: int
@@ -51,7 +51,7 @@ class MajorUpdate(BaseModel):
 
 
 class MajorResponse(BaseModel):
-    id: int
+    major_id: int
     major_name: str
     faculty_id: int
 
@@ -59,20 +59,19 @@ class MajorResponse(BaseModel):
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 # =========================
 # Faculty + majors
 # =========================
-
 class MajorInFacultyResponse(BaseModel):
-    id: int
+    major_id: int
     major_name: str
 
     created_by_id: Optional[int] = None
@@ -80,8 +79,9 @@ class MajorInFacultyResponse(BaseModel):
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class FacultyWithMajorsCreate(BaseModel):
@@ -91,7 +91,7 @@ class FacultyWithMajorsCreate(BaseModel):
 
 
 class FacultyWithMajorsResponse(BaseModel):
-    id: int
+    faculty_id: int
     faculty_name: str
     majors: List[MajorInFacultyResponse]
 
@@ -100,5 +100,6 @@ class FacultyWithMajorsResponse(BaseModel):
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }

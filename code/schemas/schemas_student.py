@@ -1,14 +1,10 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
-from datetime import   datetime
 
-
-# =========================
-# Student
-# =========================
 
 class AdminActionRequest(BaseModel):
     updated_by_name: str
+
 
 class StudentUserCreate(BaseModel):
     username: str
@@ -17,11 +13,10 @@ class StudentUserCreate(BaseModel):
 
 
 class StudentRegisterRequest(BaseModel):
-    student_id: str
+    student_code: str
     prefix: Optional[str] = None
     first_name: str
     last_name: str
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
@@ -39,7 +34,6 @@ class StudentAdminUpdateRequest(BaseModel):
     prefix: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: Optional[int] = None
     major_id: Optional[int] = None
@@ -53,7 +47,6 @@ class StudentUpdateRequest(BaseModel):
     prefix: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: Optional[int] = None
     major_id: Optional[int] = None
@@ -66,17 +59,17 @@ class StudentUserResponse(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class StudentResponse(BaseModel):
-    id: int
-    student_id: str
+    student_id: int
+    student_code: str
     prefix: Optional[str] = None
     first_name: str
     last_name: str
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: int
     major_id: int
@@ -84,18 +77,19 @@ class StudentResponse(BaseModel):
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
+
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
-    deleted_by_id: Optional[int] = None
-    deleted_by_name: Optional[str] = None
-    deleted_at: Optional[datetime] = None
-    is_deleted: Optional[bool] = False
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
+
     user: Optional[StudentUserResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class StudentMessageResponse(BaseModel):
@@ -110,8 +104,9 @@ class StudentDeleteRequest(BaseModel):
 class StudentDeleteResponse(BaseModel):
     detail: str
 
+
 class MajorStudentSummaryRequest(BaseModel):
-    faculties_id: int
+    faculty_id: int
     updated_by_name: str
 
 
@@ -120,37 +115,40 @@ class MajorStudentSummaryItemResponse(BaseModel):
     major_id: int
     count_student: int
 
+
 class FacultyStudentSummaryRequest(BaseModel):
     updated_by_name: str
 
 
 class FacultyStudentSummaryResponse(BaseModel):
-    faculties_name: str
-    faculties_id: int
+    faculty_name: str
+    faculty_id: int
     count_major: int
     count_student: int
 
 
 class MajorStudentSummaryResponse(BaseModel):
     detail: str
-    faculties_id: int
-    faculties_name: str
+    faculty_id: int
+    faculty_name: str
     data: List[MajorStudentSummaryItemResponse]
+
 
 class StudentUserInfoResponse(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class StudentDetailWithUserResponse(BaseModel):
-    id: int
-    student_id: str
+    student_id: int
+    student_code: str
     prefix: Optional[str] = None
     first_name: str
     last_name: str
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: int
     major_id: int
@@ -158,18 +156,25 @@ class StudentDetailWithUserResponse(BaseModel):
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
+
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
+
     user: StudentUserInfoResponse
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class StudentMajorListRequest(BaseModel):
     major_id: int
     updated_by_name: str
+
 
 class StudentMajorListResponse(BaseModel):
     detail: str
@@ -195,7 +200,6 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
     prefix: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    citizen_id: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: Optional[int] = None
     major_id: Optional[int] = None
@@ -206,7 +210,6 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
     user: Optional[StudentUserUpdateRequest] = None
 
     @field_validator(
-        "citizen_id",
         "img_stu",
         "prefix",
         "first_name",
@@ -221,21 +224,3 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
         if isinstance(v, str) and v.strip() == "":
             return None
         return v
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

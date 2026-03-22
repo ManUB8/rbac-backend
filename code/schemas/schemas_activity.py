@@ -1,11 +1,19 @@
+from pydantic import BaseModel, field_validator, field_serializer
+from typing import Optional
+from datetime import date, time
 
-from pydantic import BaseModel, field_validator
-from typing import  Optional
-from datetime import date, time, datetime
 
-# =========================
-# Activity
-# =========================
+def parse_time_dot(value):
+    if value is None:
+        return None
+    if isinstance(value, time):
+        return value
+    if isinstance(value, str):
+        value = value.strip().replace(":", ".")
+        hh, mm = value.split(".")
+        return time(hour=int(hh), minute=int(mm))
+    raise ValueError("รูปแบบเวลาไม่ถูกต้อง")
+
 
 class ActivityCreateRequest(BaseModel):
     activity_name: str
@@ -16,8 +24,13 @@ class ActivityCreateRequest(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
-    activity_status: bool
+    activity_status: bool = True
     created_by_name: str
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def validate_time_format(cls, value):
+        return parse_time_dot(value)
 
 
 class ActivityUpdateRequest(BaseModel):
@@ -30,8 +43,13 @@ class ActivityUpdateRequest(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
+    activity_status: Optional[bool] = None
     updated_by_name: str
-    activity_status: bool
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def validate_time_format(cls, value):
+        return parse_time_dot(value)
 
 
 class ActivityDeleteRequest(BaseModel):
@@ -40,7 +58,7 @@ class ActivityDeleteRequest(BaseModel):
 
 
 class ActivityResponse(BaseModel):
-    id: int
+    activity_id: int
     activity_name: str
     activity_date: date
     start_time: time
@@ -55,15 +73,22 @@ class ActivityResponse(BaseModel):
     created_by_name: Optional[str] = None
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    @field_serializer("start_time", "end_time")
+    def serialize_time(self, value: time):
+        return value.strftime("%H.%M")
 
-class ActivitydetailResponse(BaseModel):
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class ActivityDetailResponse(BaseModel):
     detail: str
     data: ActivityResponse
+
 
 class ActivityDeleteResponse(BaseModel):
     detail: str
@@ -71,6 +96,7 @@ class ActivityDeleteResponse(BaseModel):
     activity_status: bool
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
+
 
 class ActivityMessageResponse(BaseModel):
     detail: str
