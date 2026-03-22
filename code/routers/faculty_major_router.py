@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import SessionLocal
 from models import Faculty, Major, User
-from schemas import (
+from schemas.schemas_faculty_major import (
     FacultyCreate,
     FacultyUpdate,
     FacultyResponse,
@@ -14,7 +14,6 @@ from schemas import (
     FacultyWithMajorsResponse,
     DeleteByAdminRequest,
 )
-
 router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
 
 
@@ -163,7 +162,7 @@ def delete_faculty(
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
+        "detail": f"ลบคณะสำเร็จ: {faculty_name}"
     }
 
 # =========================
@@ -296,7 +295,7 @@ def delete_major(
     db.commit()
 
     return {
-        "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
+        "detail": f"ลบสาขาสำเร็จ: {major_name}"
     }
 
 # =========================

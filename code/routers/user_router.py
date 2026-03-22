@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import User
-from schemas import (
+from schemas.schemas_user import (
     UserCreateRequest,
     UserUpdateRequest,
     UserResponse,

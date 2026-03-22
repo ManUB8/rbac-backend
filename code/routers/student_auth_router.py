@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import SessionLocal
 from models import User, Student
-from schemas import UserLoginRequest
+from schemas.schemas_user import (UserLoginRequest)
+
 
 router = APIRouter(prefix="/student-auth/v1", tags=["Student Auth"])
 
