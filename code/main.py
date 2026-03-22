@@ -9,6 +9,7 @@ from routers.user_router import router as user_router
 from routers.admin_auth_router import router as admin_auth_router
 from routers.student_auth_router import router as student_auth_router
 from routers.upload_router import router as upload_router
+from routers.student_activity_router import router as student_activity
 
 Base.metadata.create_all(bind=engine)
 
@@ -43,6 +44,8 @@ app.include_router(user_router)
 app.include_router(admin_auth_router)
 app.include_router(student_auth_router)
 app.include_router(upload_router)
+app.include_router(student_activity)
+
 
 
 @app.get("/")
