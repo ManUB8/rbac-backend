@@ -1,5 +1,5 @@
-from pydantic import BaseModel 
-from typing import List , Optional
+from pydantic import BaseModel
+from typing import List, Optional
 
 
 class CountSummary(BaseModel):
@@ -20,14 +20,17 @@ class MajorInFacultyCount(CountSummary):
 class FacultyWithMajorCount(CountSummary):
     faculty_id: int
     faculty_name: str
+    count_student: int
+    joined_count: int
+    not_joined_count: int
     major: List[MajorInFacultyCount]
 
 
 class AdminStudentItem(BaseModel):
-    student_count_all: int
     activity_count: int
     joined_count: int
     not_joined_count: int
+    student_count_all: int
     year_count: List[YearCount]
     faculty: List[FacultyWithMajorCount]
 
@@ -35,7 +38,6 @@ class AdminStudentItem(BaseModel):
 class AdminStudentMessageResponse(BaseModel):
     detail: str
     data: AdminStudentItem
-    
     
 
 class StudentDashboardActivityItem(BaseModel):

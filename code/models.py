@@ -113,6 +113,7 @@ class Student(Base):
     faculty_id = Column(Integer, ForeignKey("faculties.faculty_id", ondelete="RESTRICT"), nullable=False)
     major_id = Column(Integer, ForeignKey("majors.major_id", ondelete="RESTRICT"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True)
+    year_status = Column(String(20), nullable=True)
 
     img_stu = Column(Text, nullable=True)
 
@@ -126,6 +127,7 @@ class Student(Base):
 
     faculty = relationship("Faculty", back_populates="students")
     major = relationship("Major", back_populates="students")
+    
 
     user = relationship(
         "User",
@@ -135,6 +137,12 @@ class Student(Base):
 
     student_activities = relationship(
         "StudentActivity",
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
+    
+    student_positions = relationship(
+        "StudentPosition",
         back_populates="student",
         cascade="all, delete-orphan"
     )
@@ -232,3 +240,42 @@ class StudentActivity(Base):
             name="chk_attendance_status"
         ),
     )
+    
+class Position(Base):
+    __tablename__ = "positions"
+
+    position_id = Column(Integer, primary_key=True, index=True)
+    position_name = Column(String(100), nullable=False, unique=True)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+    student_positions = relationship("StudentPosition", back_populates="position")
+
+
+class StudentPosition(Base):
+    __tablename__ = "student_positions"
+
+    student_position_id = Column(Integer, primary_key=True, index=True)
+
+    student_id = Column(
+        Integer,
+        ForeignKey("students.student_id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    position_id = Column(
+        Integer,
+        ForeignKey("positions.position_id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    is_current = Column(Boolean, nullable=False, default=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+    student = relationship("Student", back_populates="student_positions")
+    position = relationship("Position", back_populates="student_positions")

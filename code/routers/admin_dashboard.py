@@ -6,8 +6,8 @@ from database import SessionLocal
 from models import Activity, Student, Faculty, Major, StudentActivity
 from schemas.schemas_admin_dashboard import (
     AdminStudentMessageResponse,
-    StudentDashboardMessageResponse,
-)
+    StudentDashboardMessageResponse
+    )
 
 router = APIRouter(prefix="/dashboard/v1", tags=["Dashboard"])
 
@@ -20,12 +20,7 @@ def get_db():
         db.close()
 
 
-YEAR_MAP = {
-    "69": "ปี 1",
-    "68": "ปี 2",
-    "67": "ปี 3",
-    "66": "ปี 4",
-}
+YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4", "บัณฑิต"]
 
 
 def count_students(
@@ -33,90 +28,108 @@ def count_students(
     activity_id: int,
     faculty_id: int | None = None,
     major_id: int | None = None,
-    year_prefix: str | None = None,
+    year_status: str | None = None,
     attendance_status: str | None = None,
 ):
-    is_all = activity_id == 0
+    is_all_activity = activity_id == 0
 
     q = db.query(func.count(distinct(Student.student_id)))
 
-    if not is_all or attendance_status:
+    # ถ้ามีการนับตามกิจกรรม หรือสถานะเข้าร่วม/ไม่เข้าร่วม ต้อง join student_activities
+    if not is_all_activity or attendance_status is not None:
         q = q.join(
             StudentActivity,
             StudentActivity.student_id == Student.student_id
         )
 
-    if not is_all:
+    if not is_all_activity:
         q = q.filter(StudentActivity.activity_id == activity_id)
 
-    if attendance_status:
+    if attendance_status is not None:
         q = q.filter(StudentActivity.attendance_status == attendance_status)
 
-    if faculty_id:
+    if faculty_id is not None:
         q = q.filter(Student.faculty_id == faculty_id)
 
-    if major_id:
+    if major_id is not None:
         q = q.filter(Student.major_id == major_id)
 
-    if year_prefix:
-        q = q.filter(Student.student_code.like(f"{year_prefix}%"))
+    if year_status is not None and year_status.strip() != "":
+        q = q.filter(Student.year_status == year_status)
 
     return q.scalar() or 0
 
 
 @router.get("/admin/{activity_id}", response_model=AdminStudentMessageResponse)
 def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
-    is_all = activity_id == 0
+    is_all_activity = activity_id == 0
 
-    if not is_all:
-        activity = db.query(Activity).filter(Activity.activity_id == activity_id).first()
+    if not is_all_activity:
+        activity = (
+            db.query(Activity)
+            .filter(Activity.activity_id == activity_id)
+            .first()
+        )
+
         if not activity:
             raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
 
-    student_count_all = count_students(db, activity_id)
-
+    # 1. กิจกรรมทั้งหมด
     activity_count = (
-        db.query(func.count(Activity.activity_id)).scalar() or 0
-        if is_all
+        db.query(func.count(Activity.activity_id))
+        .filter(Activity.activity_status == True)
+        .scalar()
+        or 0
+        if is_all_activity
         else 1
     )
 
+    # 2. นิสิตทั้งหมดที่เข้าร่วม
     joined_count = count_students(
-        db,
-        activity_id,
+        db=db,
+        activity_id=activity_id,
         attendance_status="เข้าร่วม"
     )
 
+    # 3. นิสิตทั้งหมดที่ไม่เข้าร่วม
     not_joined_count = count_students(
-        db,
-        activity_id,
+        db=db,
+        activity_id=activity_id,
         attendance_status="ไม่เข้าร่วม"
     )
 
+    # 4. นิสิตทั้งหมด
+    student_count_all = count_students(
+        db=db,
+        activity_id=activity_id
+    )
+
+    # 5. จำนวนนิสิตแยกตามชั้นปี
     year_count = []
 
-    for prefix, year_name in YEAR_MAP.items():
+    for year in YEAR_STATUS_LIST:
         year_count.append({
-            "name": year_name,
+            "name": year,
             "count_student": count_students(
-                db,
-                activity_id,
-                year_prefix=prefix
+                db=db,
+                activity_id=activity_id,
+                year_status=year
             ),
             "joined_count": count_students(
-                db,
-                activity_id,
-                year_prefix=prefix,
+                db=db,
+                activity_id=activity_id,
+                year_status=year,
                 attendance_status="เข้าร่วม"
             ),
             "not_joined_count": count_students(
-                db,
-                activity_id,
-                year_prefix=prefix,
+                db=db,
+                activity_id=activity_id,
+                year_status=year,
                 attendance_status="ไม่เข้าร่วม"
             ),
         })
 
+    # 6. คณะ + สาขา
     faculties = (
         db.query(Faculty)
         .order_by(Faculty.faculty_id.asc())
@@ -140,19 +153,19 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
                 "major_id": major.major_id,
                 "major_name": major.major_name,
                 "count_student": count_students(
-                    db,
-                    activity_id,
+                    db=db,
+                    activity_id=activity_id,
                     major_id=major.major_id
                 ),
                 "joined_count": count_students(
-                    db,
-                    activity_id,
+                    db=db,
+                    activity_id=activity_id,
                     major_id=major.major_id,
                     attendance_status="เข้าร่วม"
                 ),
                 "not_joined_count": count_students(
-                    db,
-                    activity_id,
+                    db=db,
+                    activity_id=activity_id,
                     major_id=major.major_id,
                     attendance_status="ไม่เข้าร่วม"
                 ),
@@ -162,19 +175,19 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
             "faculty_id": faculty.faculty_id,
             "faculty_name": faculty.faculty_name,
             "count_student": count_students(
-                db,
-                activity_id,
+                db=db,
+                activity_id=activity_id,
                 faculty_id=faculty.faculty_id
             ),
             "joined_count": count_students(
-                db,
-                activity_id,
+                db=db,
+                activity_id=activity_id,
                 faculty_id=faculty.faculty_id,
                 attendance_status="เข้าร่วม"
             ),
             "not_joined_count": count_students(
-                db,
-                activity_id,
+                db=db,
+                activity_id=activity_id,
                 faculty_id=faculty.faculty_id,
                 attendance_status="ไม่เข้าร่วม"
             ),
@@ -184,15 +197,14 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     return {
         "detail": "success",
         "data": {
-            "student_count_all": student_count_all,
             "activity_count": activity_count,
             "joined_count": joined_count,
             "not_joined_count": not_joined_count,
+            "student_count_all": student_count_all,
             "year_count": year_count,
             "faculty": faculty_result,
         }
     }
-    
 @router.get("/student/{student_id}", response_model=StudentDashboardMessageResponse)
 def get_student_dashboard(student_id: int, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.student_id == student_id).first()

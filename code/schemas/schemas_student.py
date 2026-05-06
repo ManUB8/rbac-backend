@@ -1,7 +1,25 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
+from datetime import date
+
+YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4", "บัณฑิต"]
 
 
+def validate_year_status(value):
+    if value is None:
+        return None
+
+    if value not in YEAR_STATUS_LIST:
+        raise ValueError("year_status ต้องเป็น ปี 1, ปี 2, ปี 3, ปี 4 หรือ บัณฑิต")
+
+    return value
+    
+class StudentPositionBody(BaseModel):
+    position_id: Optional[int] = None
+    position_name: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    
 class AdminActionRequest(BaseModel):
     updated_by_name: str
 
@@ -18,11 +36,18 @@ class StudentRegisterRequest(BaseModel):
     first_name: str
     last_name: str
     gender: Optional[str] = None
-    faculty_name: Optional[str] = None
-    major_name: Optional[str] = None
     faculty_id: Optional[int] = None
+    faculty_name: Optional[str] = None
     major_id: Optional[int] = None
+    major_name: Optional[str] = None
     img_stu: Optional[str] = None
+    position: Optional[StudentPositionBody] = None
+    year_status: Optional[str] = None
+
+    @field_validator("year_status")
+    @classmethod
+    def validate_year_status_field(cls, value):
+        return validate_year_status(value)
     user: StudentUserCreate
 
 
@@ -64,6 +89,13 @@ class StudentUserResponse(BaseModel):
     }
 
 
+class StudentCurrentPositionResponse(BaseModel):
+    position_id: Optional[int] = None
+    position_name: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
 class StudentResponse(BaseModel):
     student_id: int
     student_code: str
@@ -71,12 +103,16 @@ class StudentResponse(BaseModel):
     first_name: str
     last_name: str
     gender: Optional[str] = None
+    year_status: Optional[str] = None
+
     faculty_id: int
     major_id: int
     user_id: int
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
+
+    position: Optional[StudentCurrentPositionResponse] = None
 
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
@@ -91,13 +127,13 @@ class StudentResponse(BaseModel):
         "from_attributes": True
     }
 
-
 class StudentMessageResponse(BaseModel):
     detail: str
     data: StudentResponse
 
 
 class StudentDeleteRequest(BaseModel):
+    student_id: int
     updated_by_name: str
 
 
@@ -156,6 +192,8 @@ class StudentDetailWithUserResponse(BaseModel):
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
+    position: Optional[StudentCurrentPositionResponse] = None
+    year_status: Optional[str] = None
 
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None
@@ -197,20 +235,28 @@ class StudentUserUpdateRequest(BaseModel):
 
 
 class StudentAdminUpdateWithUserRequest(BaseModel):
+    student_id: int
+    student_code: Optional[str] = None
     prefix: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     gender: Optional[str] = None
     faculty_id: Optional[int] = None
-    major_id: Optional[int] = None
     faculty_name: Optional[str] = None
+    major_id: Optional[int] = None
     major_name: Optional[str] = None
     img_stu: Optional[str] = None
     updated_by_name: str
+    position: Optional[StudentPositionBody] = None
     user: Optional[StudentUserUpdateRequest] = None
+    year_status: Optional[str] = None
+
+    @field_validator("year_status")
+    @classmethod
+    def validate_year_status_field(cls, value):
+        return validate_year_status(value)
 
     @field_validator(
-        "img_stu",
         "prefix",
         "first_name",
         "last_name",
@@ -224,3 +270,27 @@ class StudentAdminUpdateWithUserRequest(BaseModel):
         if isinstance(v, str) and v.strip() == "":
             return None
         return v
+
+
+class StudentFilterRequest(BaseModel):
+    search: Optional[str] = None
+    page: int = 1
+    limit: int = 10
+    faculty_id: Optional[int] = None
+    major_id: Optional[int] = None
+    year_status: Optional[str] = None
+    position_id: Optional[int] = None
+
+    @field_validator("year_status")
+    @classmethod
+    def validate_year_status_field(cls, value):
+        return validate_year_status(value)
+
+
+class StudentFilterResponse(BaseModel):
+    detail: str
+    page: int
+    limit: int
+    total_all: int
+    total_page: int
+    data: List[StudentDetailWithUserResponse]
