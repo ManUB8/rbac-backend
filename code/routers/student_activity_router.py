@@ -1,26 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from math import radians, sin, cos, sqrt, atan2
 import time as time_module
-from datetime import datetime
 
 from database import get_db
 from models import Student, Activity, StudentActivity, User
 from schemas.schemas_student_activity import (
-    StudentActivityCreateRequest,
-    StudentActivityUpdateRequest,
-    StudentActivityDeleteRequest,
+    StudentActivityRegisterRequest,
+    StudentActivityCheckinRequest,
+    StudentActivityCheckoutRequest,
     StudentActivityResponse,
     StudentActivityListResponse,
+    StudentActivityUpdateRequest,
     StudentActivityDeleteResponse,
+    StudentActivityDeleteRequest,
+    StudentActivityUpdateRequest
+    
 )
 
 router = APIRouter(prefix="/student_activities/v1", tags=["Student Activities"])
-
-
-THAI_MONTHS = [
-    "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-]
 
 
 def get_unix_time() -> int:
@@ -37,8 +36,10 @@ def get_admin_by_name(db: Session, name: str) -> User:
         )
         .first()
     )
+
     if not admin:
         raise HTTPException(status_code=403, detail=f"ผู้ใช้นี้ไม่มีสิทธิ์ admin: {name}")
+
     return admin
 
 
@@ -49,32 +50,77 @@ def format_time_short(time_obj):
 def format_hours_text(hours):
     if hours is None:
         return "-"
-    hours_float = float(hours)
-    if hours_float.is_integer():
-        return f"{int(hours_float)} ชั่วโมง"
-    return f"{hours_float:g} ชั่วโมง"
+
+    h = float(hours)
+    if h.is_integer():
+        return f"{int(h)} ชั่วโมง"
+
+    return f"{h:g} ชั่วโมง"
 
 
 def format_activity_time_text(start_time, end_time, hours):
     return f"{format_time_short(start_time)} - {format_time_short(end_time)} น. ({format_hours_text(hours)})"
 
 
-def format_registered_at_thai(ts):
-    if ts is None:
-        return None
+def calculate_distance_meter(lat1, lng1, lat2, lng2):
+    r = 6371000
 
-    dt = datetime.fromtimestamp(ts)
-    day = dt.day
-    month = THAI_MONTHS[dt.month]
-    year = dt.year + 543
-    time_text = dt.strftime("%H:%M:%S")
+    lat1 = radians(float(lat1))
+    lng1 = radians(float(lng1))
+    lat2 = radians(float(lat2))
+    lng2 = radians(float(lng2))
 
-    return f"ลงทะเบียนเมื่อ {day} {month} {year} เวลา {time_text}"
+    dlat = lat2 - lat1
+    dlng = lng2 - lng1
+
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlng / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return r * c
+
+
+def validate_activity_location(activity: Activity, lat: float, lng: float):
+    if activity.activity_lat is None or activity.activity_lng is None:
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ยังไม่ได้กำหนดพิกัด")
+
+    radius = activity.activity_radius_meter or 100
+
+    distance = calculate_distance_meter(
+        lat,
+        lng,
+        activity.activity_lat,
+        activity.activity_lng
+    )
+
+    if distance > radius:
+        raise HTTPException(
+            status_code=400,
+            detail=f"อยู่นอกพื้นที่กิจกรรม ระยะห่างประมาณ {int(distance)} เมตร"
+        )
+
+
+def get_student_by_code(db: Session, student_code: str) -> Student:
+    student = db.query(Student).filter(Student.student_code == student_code).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+
+    return student
+
+
+def get_activity_by_id(db: Session, activity_id: int) -> Activity:
+    activity = db.query(Activity).filter(Activity.activity_id == activity_id).first()
+
+    if not activity:
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+
+    if activity.activity_status is not True:
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ปิดใช้งานแล้ว")
+
+    return activity
 
 
 def build_student_activity_response(item: StudentActivity, student: Student, activity: Activity):
-    registered_time = item.created_at
-
     return {
         "student_activity_id": item.student_activity_id,
         "student_id": student.student_id,
@@ -89,10 +135,21 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
             activity.hours
         ),
         "location": activity.location,
+
+        "check_type": activity.check_type,
+        "require_registration": activity.require_registration,
+        "max_participants": activity.max_participants,
+
         "attendance_status": item.attendance_status,
-        "registered_at": registered_time,
-        "registered_at_text": format_registered_at_thai(registered_time),
+        "registered_at": item.registered_at,
         "checkin_at": item.checkin_at,
+        "checkout_at": item.checkout_at,
+
+        "checkin_lat": float(item.checkin_lat) if item.checkin_lat is not None else None,
+        "checkin_lng": float(item.checkin_lng) if item.checkin_lng is not None else None,
+        "checkout_lat": float(item.checkout_lat) if item.checkout_lat is not None else None,
+        "checkout_lng": float(item.checkout_lng) if item.checkout_lng is not None else None,
+
         "created_by_id": item.created_by_id,
         "created_by_name": item.created_by_name,
         "updated_by_id": item.updated_by_id,
@@ -102,53 +159,181 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
     }
 
 
-@router.post("/create", response_model=StudentActivityResponse)
-def create_student_activity(body: StudentActivityCreateRequest, db: Session = Depends(get_db)):
-    admin = get_admin_by_name(db, body.created_by_name)
+@router.post("/register", response_model=StudentActivityResponse)
+def register_activity(
+    body: StudentActivityRegisterRequest,
+    db: Session = Depends(get_db)
+):
+    student = get_student_by_code(db, body.student_code)
+    activity = get_activity_by_id(db, body.activity_id)
 
-    student = db.query(Student).filter(Student.student_code == body.student_code).first()
-    if not student:
-        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
-
-    activity = db.query(Activity).filter(Activity.activity_id == body.activity_id).first()
-    if not activity:
-        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
+    if not activity.require_registration:
+        raise HTTPException(
+            status_code=400,
+            detail="กิจกรรมนี้ไม่จำเป็นต้องลงทะเบียนล่วงหน้า"
+        )
 
     existing = (
         db.query(StudentActivity)
         .filter(
             StudentActivity.student_id == student.student_id,
-            StudentActivity.activity_id == activity.activity_id,
+            StudentActivity.activity_id == activity.activity_id
         )
         .first()
     )
+
     if existing:
-        raise HTTPException(status_code=500, detail="นิสิตลงทะเบียนกิจกรรมนี้แล้ว")
+        raise HTTPException(
+            status_code=400,
+            detail="นิสิตลงทะเบียนกิจกรรมนี้แล้ว"
+        )
+
+    registered_count = (
+        db.query(func.count(StudentActivity.student_activity_id))
+        .filter(StudentActivity.activity_id == activity.activity_id)
+        .scalar()
+        or 0
+    )
+
+    if activity.max_participants is not None and registered_count >= activity.max_participants:
+        raise HTTPException(
+            status_code=400,
+            detail="กิจกรรมนี้มีผู้ลงทะเบียนเต็มแล้ว"
+        )
 
     now = get_unix_time()
 
-    new_item = StudentActivity(
+    item = StudentActivity(
         student_id=student.student_id,
         activity_id=activity.activity_id,
-        attendance_status="เข้าร่วม",
-        checkin_at=now,
-        created_by_id=admin.user_id,
-        created_by_name=admin.name,
-        updated_by_id=admin.user_id,
-        updated_by_name=admin.name,
+        attendance_status="ไม่เข้าร่วม",
+        registered_at=now,
+        checkin_at=None,
+        checkout_at=None,
+
+        created_by_id=student.user_id,
+        created_by_name=f"{student.first_name} {student.last_name}",
+        updated_by_id=student.user_id,
+        updated_by_name=f"{student.first_name} {student.last_name}",
+
         created_at=now,
         updated_at=now,
     )
 
-    db.add(new_item)
+    db.add(item)
     db.commit()
-    db.refresh(new_item)
+    db.refresh(item)
 
     return {
-        "detail": "ลงทะเบียนเข้าร่วมกิจกรรมเรียบร้อยแล้ว",
-        "data": build_student_activity_response(new_item, student, activity)
+        "detail": "ลงทะเบียนกิจกรรมสำเร็จ",
+        "data": build_student_activity_response(item, student, activity)
     }
 
+@router.post("/checkin", response_model=StudentActivityResponse)
+def checkin_activity(
+    body: StudentActivityCheckinRequest,
+    db: Session = Depends(get_db)
+):
+    admin = get_admin_by_name(db, body.created_by_name)
+    student = get_student_by_code(db, body.student_code)
+    activity = get_activity_by_id(db, body.activity_id)
+
+    validate_activity_location(activity, body.checkin_lat, body.checkin_lng)
+
+    item = (
+        db.query(StudentActivity)
+        .filter(
+            StudentActivity.student_id == student.student_id,
+            StudentActivity.activity_id == activity.activity_id
+        )
+        .first()
+    )
+
+    if activity.require_registration and not item:
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ต้องลงทะเบียนก่อนเช็คอิน")
+
+    if item and item.checkin_at is not None:
+        raise HTTPException(status_code=400, detail="นิสิตเช็คอินกิจกรรมนี้แล้ว")
+
+    now = get_unix_time()
+
+    if not item:
+        item = StudentActivity(
+            student_id=student.student_id,
+            activity_id=activity.activity_id,
+            registered_at=None,
+            created_by_id=admin.user_id,
+            created_by_name=admin.name,
+            created_at=now,
+        )
+        db.add(item)
+
+    item.attendance_status = "เข้าร่วม"
+    item.checkin_at = now
+    item.checkin_lat = body.checkin_lat
+    item.checkin_lng = body.checkin_lng
+    item.updated_by_id = admin.user_id
+    item.updated_by_name = admin.name
+    item.updated_at = now
+
+    db.commit()
+    db.refresh(item)
+
+    return {
+        "detail": "เช็คอินสำเร็จ",
+        "data": build_student_activity_response(item, student, activity)
+    }
+
+
+@router.patch("/checkout", response_model=StudentActivityResponse)
+def checkout_activity(
+    body: StudentActivityCheckoutRequest,
+    db: Session = Depends(get_db)
+):
+    admin = get_admin_by_name(db, body.updated_by_name)
+    student = get_student_by_code(db, body.student_code)
+    activity = get_activity_by_id(db, body.activity_id)
+
+    if activity.check_type != "checkin_checkout":
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้เป็นแบบเช็คอินอย่างเดียว ไม่ต้องเช็คเอาท์")
+
+    validate_activity_location(activity, body.checkout_lat, body.checkout_lng)
+
+    item = (
+        db.query(StudentActivity)
+        .options(joinedload(StudentActivity.student), joinedload(StudentActivity.activity))
+        .filter(
+            StudentActivity.student_id == student.student_id,
+            StudentActivity.activity_id == activity.activity_id
+        )
+        .first()
+    )
+
+    if not item:
+        raise HTTPException(status_code=400, detail="ต้องเช็คอินก่อน จึงจะเช็คเอาท์ได้")
+
+    if item.checkin_at is None:
+        raise HTTPException(status_code=400, detail="ต้องเช็คอินก่อน จึงจะเช็คเอาท์ได้")
+
+    if item.checkout_at is not None:
+        raise HTTPException(status_code=400, detail="นิสิตเช็คเอาท์กิจกรรมนี้แล้ว")
+
+    now = get_unix_time()
+
+    item.checkout_at = now
+    item.checkout_lat = body.checkout_lat
+    item.checkout_lng = body.checkout_lng
+    item.updated_by_id = admin.user_id
+    item.updated_by_name = admin.name
+    item.updated_at = now
+
+    db.commit()
+    db.refresh(item)
+
+    return {
+        "detail": "เช็คเอาท์สำเร็จ",
+        "data": build_student_activity_response(item, student, activity)
+    }
 
 @router.get("/get-all/", response_model=StudentActivityListResponse)
 def get_all_student_activities(db: Session = Depends(get_db)):
