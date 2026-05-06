@@ -10,6 +10,7 @@ from routers.admin_auth_router import router as admin_auth_router
 from routers.student_auth_router import router as student_auth_router
 from routers.upload_router import router as upload_router
 from routers.student_activity_router import router as student_activity
+from routers.admin_dashboard import router as admin_dashboard
 
 Base.metadata.create_all(bind=engine)
 
@@ -45,6 +46,7 @@ app.include_router(admin_auth_router)
 app.include_router(student_auth_router)
 app.include_router(upload_router)
 app.include_router(student_activity)
+app.include_router(admin_dashboard)
 
 
 

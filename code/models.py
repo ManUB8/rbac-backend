@@ -177,6 +177,13 @@ class Activity(Base):
 
     created_at = Column(BigInteger, nullable=True)
     updated_at = Column(BigInteger, nullable=True)
+    check_type = Column(String(30), nullable=False, default="checkin_only")
+    require_registration = Column(Boolean, nullable=False, default=False)
+    max_participants = Column(Integer, nullable=True)
+
+    activity_lat = Column(Numeric(10, 7), nullable=True)
+    activity_lng = Column(Numeric(10, 7), nullable=True)
+    activity_radius_meter = Column(Integer, nullable=False, default=100)
 
     student_activities = relationship(
         "StudentActivity",
@@ -209,6 +216,14 @@ class StudentActivity(Base):
 
     student = relationship("Student", back_populates="student_activities", foreign_keys=[student_id])
     activity = relationship("Activity", back_populates="student_activities", foreign_keys=[activity_id])
+    registered_at = Column(BigInteger, nullable=True)
+    checkout_at = Column(BigInteger, nullable=True)
+
+    checkin_lat = Column(Numeric(10, 7), nullable=True)
+    checkin_lng = Column(Numeric(10, 7), nullable=True)
+
+    checkout_lat = Column(Numeric(10, 7), nullable=True)
+    checkout_lng = Column(Numeric(10, 7), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("student_id", "activity_id", name="uq_student_activity"),

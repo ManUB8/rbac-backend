@@ -6,13 +6,23 @@ from datetime import date, time
 def parse_time_dot(value):
     if value is None:
         return None
+
     if isinstance(value, time):
         return value
+
     if isinstance(value, str):
         value = value.strip().replace(":", ".")
         hh, mm = value.split(".")
         return time(hour=int(hh), minute=int(mm))
+
     raise ValueError("รูปแบบเวลาไม่ถูกต้อง")
+
+
+def validate_check_type(value: str):
+    allowed = ["checkin_only", "checkin_checkout"]
+    if value not in allowed:
+        raise ValueError("check_type ต้องเป็น checkin_only หรือ checkin_checkout")
+    return value
 
 
 class ActivityCreateRequest(BaseModel):
@@ -27,10 +37,23 @@ class ActivityCreateRequest(BaseModel):
     activity_status: bool = True
     created_by_name: str
 
+    check_type: str = "checkin_only"
+    require_registration: bool = False
+    max_participants: Optional[int] = None
+
+    activity_lat: Optional[float] = None
+    activity_lng: Optional[float] = None
+    activity_radius_meter: int = 100
+
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
     def validate_time_format(cls, value):
         return parse_time_dot(value)
+
+    @field_validator("check_type")
+    @classmethod
+    def validate_check_type_field(cls, value):
+        return validate_check_type(value)
 
 
 class ActivityUpdateRequest(BaseModel):
@@ -46,10 +69,25 @@ class ActivityUpdateRequest(BaseModel):
     activity_status: Optional[bool] = None
     updated_by_name: str
 
+    check_type: Optional[str] = None
+    require_registration: Optional[bool] = None
+    max_participants: Optional[int] = None
+
+    activity_lat: Optional[float] = None
+    activity_lng: Optional[float] = None
+    activity_radius_meter: Optional[int] = None
+
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
     def validate_time_format(cls, value):
         return parse_time_dot(value)
+
+    @field_validator("check_type")
+    @classmethod
+    def validate_check_type_field(cls, value):
+        if value is None:
+            return value
+        return validate_check_type(value)
 
 
 class ActivityDeleteRequest(BaseModel):
@@ -68,6 +106,14 @@ class ActivityResponse(BaseModel):
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool
+
+    check_type: str
+    require_registration: bool
+    max_participants: Optional[int] = None
+
+    activity_lat: Optional[float] = None
+    activity_lng: Optional[float] = None
+    activity_radius_meter: int
 
     created_by_id: Optional[int] = None
     created_by_name: Optional[str] = None

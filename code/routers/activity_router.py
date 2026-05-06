@@ -49,35 +49,28 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
     return admin
 
 
-def parse_time_dot(value):
-    if value is None:
-        return None
+def validate_activity_data(data):
+    if data.start_time >= data.end_time:
+        raise HTTPException(status_code=400, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
 
-    if isinstance(value, time):
-        return value
+    if data.max_participants is not None and data.max_participants <= 0:
+        raise HTTPException(status_code=400, detail="max_participants ต้องมากกว่า 0")
 
-    if isinstance(value, str):
-        value = value.strip().replace(":", ".")
-        try:
-            return datetime.strptime(value, "%H.%M").time()
-        except ValueError:
-            raise ValueError("รูปแบบเวลาต้องเป็น HH.MM เช่น 08.00 หรือ 12.30")
+    if data.activity_radius_meter is not None and data.activity_radius_meter <= 0:
+        raise HTTPException(status_code=400, detail="activity_radius_meter ต้องมากกว่า 0")
 
-    raise ValueError("รูปแบบเวลาไม่ถูกต้อง")
+    if data.activity_lat is not None and not (-90 <= data.activity_lat <= 90):
+        raise HTTPException(status_code=400, detail="activity_lat ไม่ถูกต้อง")
 
-
-def format_time_dot(value: time):
-    if value is None:
-        return None
-    return value.strftime("%H.%M")
+    if data.activity_lng is not None and not (-180 <= data.activity_lng <= 180):
+        raise HTTPException(status_code=400, detail="activity_lng ไม่ถูกต้อง")
 
 
 @router.post("/create", response_model=ActivityMessageResponse)
 def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
     admin = get_admin_by_name(db, data.created_by_name)
 
-    if data.start_time >= data.end_time:
-        raise HTTPException(status_code=500, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
+    validate_activity_data(data)
 
     now = get_unix_time()
 
@@ -91,6 +84,14 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         description=data.description,
         activity_img=data.activity_img,
         activity_status=data.activity_status,
+
+        check_type=data.check_type,
+        require_registration=data.require_registration,
+        max_participants=data.max_participants,
+        activity_lat=data.activity_lat,
+        activity_lng=data.activity_lng,
+        activity_radius_meter=data.activity_radius_meter,
+
         created_by_id=admin.user_id,
         created_by_name=admin.name,
         updated_by_id=admin.user_id,
@@ -107,8 +108,22 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/get-all", response_model=list[ActivityResponse])
-def get_all_activities(db: Session = Depends(get_db)):
-    return db.query(Activity).filter(Activity.activity_status == True).all()
+def get_all_active_activities(db: Session = Depends(get_db)):
+    return (
+        db.query(Activity)
+        .filter(Activity.activity_status == True)
+        .order_by(Activity.activity_id.desc())
+        .all()
+    )
+
+
+@router.get("/admin/get-all", response_model=list[ActivityResponse])
+def get_all_activities_admin(db: Session = Depends(get_db)):
+    return (
+        db.query(Activity)
+        .order_by(Activity.activity_id.desc())
+        .all()
+    )
 
 
 @router.get("/get-one/{activity_id}", response_model=ActivityResponse)
@@ -116,7 +131,7 @@ def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(Activity.activity_id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
 
     return activity
 
@@ -124,28 +139,38 @@ def get_activity_by_id(activity_id: int, db: Session = Depends(get_db)):
 @router.patch("/update/{activity_id}", response_model=ActivityMessageResponse)
 def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session = Depends(get_db)):
     if activity_id != data.activity_id:
-        raise HTTPException(status_code=500, detail="activity_id ไม่ตรงกัน")
+        raise HTTPException(status_code=400, detail="activity_id ไม่ตรงกัน")
 
-    activity = (
-        db.query(Activity)
-        .filter(
-            Activity.activity_id == activity_id,
-            Activity.activity_status == True
-        )
-        .first()
-    )
+    activity = db.query(Activity).filter(Activity.activity_id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
 
     admin = get_admin_by_name(db, data.updated_by_name)
+
     update_data = data.model_dump(exclude_unset=True)
 
     new_start_time = update_data.get("start_time", activity.start_time)
     new_end_time = update_data.get("end_time", activity.end_time)
 
     if new_start_time >= new_end_time:
-        raise HTTPException(status_code=500, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
+        raise HTTPException(status_code=400, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
+
+    new_max_participants = update_data.get("max_participants", activity.max_participants)
+    if new_max_participants is not None and new_max_participants <= 0:
+        raise HTTPException(status_code=400, detail="max_participants ต้องมากกว่า 0")
+
+    new_radius = update_data.get("activity_radius_meter", activity.activity_radius_meter)
+    if new_radius is not None and new_radius <= 0:
+        raise HTTPException(status_code=400, detail="activity_radius_meter ต้องมากกว่า 0")
+
+    new_lat = update_data.get("activity_lat", activity.activity_lat)
+    if new_lat is not None and not (-90 <= float(new_lat) <= 90):
+        raise HTTPException(status_code=400, detail="activity_lat ไม่ถูกต้อง")
+
+    new_lng = update_data.get("activity_lng", activity.activity_lng)
+    if new_lng is not None and not (-180 <= float(new_lng) <= 180):
+        raise HTTPException(status_code=400, detail="activity_lng ไม่ถูกต้อง")
 
     for key, value in update_data.items():
         if key not in ["updated_by_name", "activity_id"]:
@@ -164,12 +189,12 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
 @router.delete("/delete/{activity_id}", response_model=ActivityDeleteResponse)
 def delete_activity(activity_id: int, data: ActivityDeleteRequest, db: Session = Depends(get_db)):
     if activity_id != data.activity_id:
-        raise HTTPException(status_code=500, detail="activity_id ไม่ตรงกัน")
+        raise HTTPException(status_code=400, detail="activity_id ไม่ตรงกัน")
 
     activity = db.query(Activity).filter(Activity.activity_id == activity_id).first()
 
     if not activity:
-        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
 
     admin = get_admin_by_name(db, data.updated_by_name)
 
