@@ -7,6 +7,7 @@ from schemas.schemas_user import UserLoginRequest
 from schemas.schemas_student import StudentResponse
 
 router = APIRouter(prefix="/student-auth/v1", tags=["Student Auth"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():

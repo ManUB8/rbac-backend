@@ -93,6 +93,7 @@ class FacultyWithMajorsCreate(BaseModel):
 class FacultyWithMajorsResponse(BaseModel):
     faculty_id: int
     faculty_name: str
+    majors_count: int = 0
     majors: List[MajorInFacultyResponse]
 
     created_by_id: Optional[int] = None
@@ -103,3 +104,9 @@ class FacultyWithMajorsResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class FacultyWithMajorsListResponse(BaseModel):
+    total_faculty: int
+    total_major: int
+    data: List[FacultyWithMajorsResponse]

@@ -21,6 +21,7 @@ from schemas.schemas_student import (
 )
 
 router = APIRouter(prefix="/student/v1", tags=["Student Register"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():
@@ -50,6 +51,18 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
         raise HTTPException(
             status_code=403,
             detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}"
+        )
+
+    return admin
+
+
+def get_delete_admin_by_name(db: Session, admin_name: str) -> User:
+    admin = get_admin_by_name(db, admin_name)
+
+    if admin.name not in DELETE_ALLOWED_ADMIN_NAMES:
+        raise HTTPException(
+            status_code=403,
+            detail="แอดมินนี้ไม่มีสิทธิ์ลบนิสิต"
         )
 
     return admin

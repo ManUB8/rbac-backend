@@ -1,3 +1,4 @@
+# schemas_student_activity.py
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date
@@ -116,3 +117,28 @@ class StudentActivityFilterResponse(BaseModel):
     count_student: int
     data: List[StudentActivityViewItemResponse]
     
+class StudentActivityAvailableItemResponse(BaseModel):
+    activity_id: int
+    activity_name: str
+    activity_date: date
+    activity_time_text: str
+    location: Optional[str] = None
+    activity_img: Optional[str] = None
+
+    check_type: str
+    require_registration: bool
+    max_participants: Optional[int] = None
+
+    registered_count: int = 0
+    register_text: Optional[str] = None
+    is_registered: bool = False
+    is_full: bool = False
+
+    button_text: str
+    button_status: str
+
+
+class StudentActivityAvailableListResponse(BaseModel):
+    detail: str
+    student_code: str
+    data: List[StudentActivityAvailableItemResponse]

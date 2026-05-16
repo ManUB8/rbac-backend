@@ -6,6 +6,7 @@ from models import User
 from schemas.schemas_user import AdminLoginRequest, AdminLoginResponse
 
 router = APIRouter(prefix="/admin-auth/v1", tags=["Admin Auth"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():

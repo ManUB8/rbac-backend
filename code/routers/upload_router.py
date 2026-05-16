@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile
 from r2_service import upload_image_to_r2
 
 router = APIRouter(prefix="/upload/v1", tags=["Upload"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 @router.post("/image-activities")

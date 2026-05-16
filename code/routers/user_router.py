@@ -14,6 +14,7 @@ from schemas.schemas_user import (
 )
 
 router = APIRouter(prefix="/user/v1", tags=["User Management"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():

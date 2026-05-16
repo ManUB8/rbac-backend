@@ -14,9 +14,11 @@ from schemas.schemas_faculty_major import (
     FacultyWithMajorsCreate,
     FacultyWithMajorsResponse,
     DeleteByAdminRequest,
+    FacultyWithMajorsListResponse
 )
 
 router = APIRouter(prefix="/faculty-majors/v1", tags=["Faculty & Majors"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():
@@ -47,6 +49,19 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
             status_code=403,
             detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}"
         )
+
+    return admin
+
+
+def get_delete_admin_by_name(db: Session, admin_name: str) -> User:
+    admin = get_admin_by_name(db, admin_name)
+
+    if admin.name not in DELETE_ALLOWED_ADMIN_NAMES:
+        raise HTTPException(
+            status_code=403,
+            detail="แอดมินนี้ไม่มีสิทธิ์ลบนิสิต"
+        )
+
     return admin
 
 
@@ -76,10 +91,26 @@ def create_faculty(data: FacultyCreate, db: Session = Depends(get_db)):
     return faculty
 
 
-@router.get("/faculties-all", response_model=list[FacultyWithMajorsResponse])
+@router.get("/faculties-all", response_model=FacultyWithMajorsListResponse)
 def get_all_faculties_with_majors(db: Session = Depends(get_db)):
-    return db.query(Faculty).options(joinedload(Faculty.majors)).all()
+    faculties = (
+        db.query(Faculty)
+        .options(joinedload(Faculty.majors))
+        .all()
+    )
 
+    result = []
+
+    for faculty in faculties:
+        faculty_data = FacultyWithMajorsResponse.model_validate(faculty)
+        faculty_data.majors_count = len(faculty.majors or [])
+        result.append(faculty_data)
+
+    return {
+        "total_faculty": len(faculties),
+        "total_major": sum(len(faculty.majors or []) for faculty in faculties),
+        "data": result,
+    }
 
 @router.get("/get-one/faculties/{faculty_id}", response_model=FacultyWithMajorsResponse)
 def get_faculty_with_majors(faculty_id: int, db: Session = Depends(get_db)):
@@ -121,12 +152,18 @@ def update_faculty(faculty_id: int, data: FacultyUpdate, db: Session = Depends(g
 
 
 @router.delete("/delete/faculties/{faculty_id}")
-def delete_faculty(faculty_id: int, data: DeleteByAdminRequest, db: Session = Depends(get_db)):
+def delete_faculty(
+    faculty_id: int,
+    data: DeleteByAdminRequest,
+    db: Session = Depends(get_db)
+):
     faculty = db.query(Faculty).filter(Faculty.faculty_id == faculty_id).first()
-    if not faculty:
-        raise HTTPException(status_code=500, detail="ไม่พบคณะ")
 
-    admin = get_admin_by_name(db, data.updated_by_name)
+    if not faculty:
+        raise HTTPException(status_code=404, detail="ไม่พบคณะ")
+
+    admin = get_delete_admin_by_name(db, data.updated_by_name)
+
     faculty_name = faculty.faculty_name
 
     faculty.updated_by_id = admin.user_id
@@ -137,8 +174,10 @@ def delete_faculty(faculty_id: int, data: DeleteByAdminRequest, db: Session = De
     db.delete(faculty)
     db.commit()
 
-    return {"detail": f"ลบคณะสำเร็จ: {faculty_name}"}
-
+    return {
+        "detail": f"แอดมิน {admin.name} ลบคณะสำเร็จ: {faculty_name}"
+    }
+    
 
 @router.post("/majors", response_model=MajorResponse)
 def create_major(data: MajorCreate, db: Session = Depends(get_db)):
@@ -231,12 +270,18 @@ def update_major(major_id: int, data: MajorUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/delete/majors/{major_id}")
-def delete_major(major_id: int, data: DeleteByAdminRequest, db: Session = Depends(get_db)):
+def delete_major(
+    major_id: int,
+    data: DeleteByAdminRequest,
+    db: Session = Depends(get_db)
+):
     major = db.query(Major).filter(Major.major_id == major_id).first()
-    if not major:
-        raise HTTPException(status_code=500, detail="ไม่พบสาขา")
 
-    admin = get_admin_by_name(db, data.updated_by_name)
+    if not major:
+        raise HTTPException(status_code=404, detail="ไม่พบสาขา")
+
+    admin = get_delete_admin_by_name(db, data.updated_by_name)
+
     major_name = major.major_name
 
     major.updated_by_id = admin.user_id
@@ -247,9 +292,11 @@ def delete_major(major_id: int, data: DeleteByAdminRequest, db: Session = Depend
     db.delete(major)
     db.commit()
 
-    return {"detail": f"ลบสาขาสำเร็จ: {major_name}"}
-
-
+    return {
+        "detail": f"แอดมิน {admin.name} ลบสาขาสำเร็จ: {major_name}"
+    }
+    
+    
 @router.post("/bulk", response_model=list[FacultyWithMajorsResponse])
 def create_faculties_with_majors(data: list[FacultyWithMajorsCreate], db: Session = Depends(get_db)):
     results = []
