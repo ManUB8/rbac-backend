@@ -6,7 +6,7 @@ from fastapi import Query
 from typing import Optional
 from sqlalchemy import or_
 from database import SessionLocal
-from models import Student, User, Faculty, Major, Position, StudentPosition
+from models import Student, User, Faculty, Major, Position, StudentPosition, StudentActivity
 from schemas.schemas_student import (
     StudentRegisterRequest,
     StudentAdminCreateRequest,
@@ -25,7 +25,7 @@ from schemas.schemas_student import (
 
 router = APIRouter(prefix="/student/v2", tags=["Student V2"])
 
-DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda"]
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_db():
@@ -610,7 +610,10 @@ def delete_student(
     db: Session = Depends(get_db)
 ):
     if student_id != data.student_id:
-        raise HTTPException(status_code=400, detail="student_id ใน URL และ body ไม่ตรงกัน")
+        raise HTTPException(
+            status_code=400,
+            detail="student_id ใน URL และ body ไม่ตรงกัน"
+        )
 
     student = (
         db.query(Student)
@@ -620,18 +623,33 @@ def delete_student(
     )
 
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบนิสิต"
+        )
 
     admin = get_delete_admin_by_name(db, data.updated_by_name)
 
     student_code = student.student_code
 
-    user = db.query(User).filter(User.user_id == student.user_id).first()
+    # หา user จาก username = student_code
+    user = (
+        db.query(User)
+        .filter(User.username == student_code)
+        .first()
+    )
 
+    # ลบข้อมูลกิจกรรมของนิสิตก่อน
+    db.query(StudentActivity).filter(
+        StudentActivity.student_id == student.student_id
+    ).delete()
+
+    # ลบนิสิต
+    db.delete(student)
+
+    # ลบ user ถ้ามี
     if user:
         db.delete(user)
-    else:
-        db.delete(student)
 
     db.commit()
 
@@ -641,8 +659,6 @@ def delete_student(
         "updated_by_id": admin.user_id,
         "updated_by_name": admin.name,
     }
-
-
 # ==========================================================
 # Get All Students
 # GET /student/v2/all-students
@@ -683,7 +699,7 @@ def get_student(student_id: int, db: Session = Depends(get_db)):
     )
 
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
 
     return build_student_response(student)
 

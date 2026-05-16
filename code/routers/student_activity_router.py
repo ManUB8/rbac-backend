@@ -15,22 +15,24 @@ from schemas.schemas_student_activity import (
     StudentActivityUpdateRequest,
     StudentActivityDeleteResponse,
     StudentActivityDeleteRequest,
-    StudentActivityUpdateRequest
+    StudentActivityUpdateRequest,
+     StudentActivityAvailableListResponse,
     
 )
 
 router = APIRouter(prefix="/student_activities/v1", tags=["Student Activities"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_unix_time() -> int:
     return int(time_module.time())
 
 
-def get_admin_by_name(db: Session, name: str) -> User:
+def get_admin_by_name(db: Session, admin_name: str) -> User:
     admin = (
         db.query(User)
         .filter(
-            User.name == name,
+            User.name == admin_name,
             User.role == "admin",
             User.is_active == True
         )
@@ -38,10 +40,24 @@ def get_admin_by_name(db: Session, name: str) -> User:
     )
 
     if not admin:
-        raise HTTPException(status_code=403, detail=f"ผู้ใช้นี้ไม่มีสิทธิ์ admin: {name}")
+        raise HTTPException(
+            status_code=403,
+            detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}"
+        )
 
     return admin
 
+
+def get_delete_admin_by_name(db: Session, admin_name: str) -> User:
+    admin = get_admin_by_name(db, admin_name)
+
+    if admin.name not in DELETE_ALLOWED_ADMIN_NAMES:
+        raise HTTPException(
+            status_code=403,
+            detail="แอดมินนี้ไม่มีสิทธิ์ลบนิสิต"
+        )
+
+    return admin
 
 def format_time_short(time_obj):
     return time_obj.strftime("%H.%M")
@@ -308,6 +324,9 @@ def checkout_activity(
         )
         .first()
     )
+    
+    if activity.require_registration and not item:
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ต้องลงทะเบียนก่อนเช็คเอาท์")
 
     if not item:
         raise HTTPException(status_code=400, detail="ต้องเช็คอินก่อน จึงจะเช็คเอาท์ได้")
@@ -440,27 +459,132 @@ def update_student_activity(student_activity_id: int, body: StudentActivityUpdat
     }
 
 
-@router.delete("/delete/{student_activity_id}", response_model=StudentActivityDeleteResponse)
-def delete_student_activity(student_activity_id: int, body: StudentActivityDeleteRequest, db: Session = Depends(get_db)):
+@router.delete(
+    "/delete/{student_activity_id}",
+    response_model=StudentActivityDeleteResponse
+)
+def delete_student_activity(
+    student_activity_id: int,
+    body: StudentActivityDeleteRequest,
+    db: Session = Depends(get_db)
+):
     if student_activity_id != body.student_activity_id:
-        raise HTTPException(status_code=500, detail="student_activity_id ใน URL และ body ไม่ตรงกัน")
+        raise HTTPException(
+            status_code=400,
+            detail="student_activity_id ใน URL และ body ไม่ตรงกัน"
+        )
 
-    admin = get_admin_by_name(db, body.updated_by_name)
+    admin = get_delete_admin_by_name(db, body.updated_by_name)
 
-    item = db.query(StudentActivity).filter(
-        StudentActivity.student_activity_id == student_activity_id
-    ).first()
+    item = (
+        db.query(StudentActivity)
+        .filter(StudentActivity.student_activity_id == student_activity_id)
+        .first()
+    )
 
     if not item:
-        raise HTTPException(status_code=500, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม"
+        )
 
     deleted_id = item.student_activity_id
+
     db.delete(item)
     db.commit()
 
     return {
-        "detail": "ลบข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
+        "detail": f"แอดมิน {admin.name} ลบข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
         "student_activity_id": deleted_id,
         "updated_by_id": admin.user_id,
         "updated_by_name": admin.name,
+    }
+    
+    
+@router.get("/student/available/{student_code}", response_model=StudentActivityAvailableListResponse)
+def get_available_activities_for_student(
+    student_code: str,
+    db: Session = Depends(get_db)
+):
+    student = get_student_by_code(db, student_code)
+
+    activities = (
+        db.query(Activity)
+        .filter(Activity.activity_status == True)
+        .order_by(Activity.activity_id.desc())
+        .all()
+    )
+
+    result = []
+
+    for activity in activities:
+        registered_count = (
+            db.query(func.count(StudentActivity.student_activity_id))
+            .filter(StudentActivity.activity_id == activity.activity_id)
+            .scalar()
+            or 0
+        )
+
+        existing = (
+            db.query(StudentActivity)
+            .filter(
+                StudentActivity.student_id == student.student_id,
+                StudentActivity.activity_id == activity.activity_id
+            )
+            .first()
+        )
+
+        is_registered = existing is not None
+
+        is_full = False
+        if activity.max_participants is not None:
+            is_full = registered_count >= activity.max_participants
+
+        register_text = None
+        if activity.require_registration:
+            register_text = f"{registered_count}/{activity.max_participants or 0}"
+
+        if activity.require_registration:
+            if is_registered:
+                button_text = "ลงทะเบียนแล้ว"
+                button_status = "registered"
+            elif is_full:
+                button_text = "ลงทะเบียนเต็มแล้ว"
+                button_status = "full"
+            else:
+                button_text = "ลงทะเบียน"
+                button_status = "can_register"
+        else:
+            button_text = "เข้าร่วมได้เลย"
+            button_status = "can_join"
+
+        result.append({
+            "activity_id": activity.activity_id,
+            "activity_name": activity.activity_name,
+            "activity_date": activity.activity_date,
+            "activity_time_text": format_activity_time_text(
+                activity.start_time,
+                activity.end_time,
+                activity.hours
+            ),
+            "location": activity.location,
+            "activity_img": activity.activity_img,
+
+            "check_type": activity.check_type,
+            "require_registration": activity.require_registration,
+            "max_participants": activity.max_participants,
+
+            "registered_count": registered_count,
+            "register_text": register_text,
+            "is_registered": is_registered,
+            "is_full": is_full,
+
+            "button_text": button_text,
+            "button_status": button_status,
+        })
+
+    return {
+        "detail": "ดึงข้อมูลกิจกรรมสำหรับนิสิตสำเร็จ",
+        "student_code": student_code,
+        "data": result
     }

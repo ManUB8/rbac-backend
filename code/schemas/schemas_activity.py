@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator, field_serializer
-from typing import Optional
+from typing import Optional, List
 from datetime import date, time
 
 
@@ -19,7 +19,7 @@ def parse_time_dot(value):
 
 
 def validate_check_type(value: str):
-    allowed = ["checkin_only", "checkin_checkout"]
+    allowed = ["checkin_only", "checkout_only", "checkin_checkout"]
     if value not in allowed:
         raise ValueError("check_type ต้องเป็น checkin_only หรือ checkin_checkout")
     return value
@@ -143,7 +143,41 @@ class ActivityDeleteResponse(BaseModel):
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
 
+    
+class ActivityWithRegisterCountResponse(ActivityResponse):
+    registered_count: int = 0
+    register_text: Optional[str] = None
+    is_full: bool = False
+
+
+class ActivityListPublicResponse(BaseModel):
+    detail: str
+    data: List[ActivityWithRegisterCountResponse]
 
 class ActivityMessageResponse(BaseModel):
     detail: str
     data: ActivityResponse
+    
+    
+class AdminActivityFilterInfo(BaseModel):
+    id: int
+    name: str
+    code: str = ""
+
+
+class ActivityAdminSearchRequest(BaseModel):
+    search: str = ""
+    page: int = 1
+    limit: int = 10
+
+    activity_status: str = ""
+    check_type: str = ""
+    require_registration: str = ""
+
+
+class ActivityAdminListResponse(BaseModel):
+    total_activity: int
+    total_active_activity: int
+    total_inactive_activity: int
+
+    activity: List[ActivityWithRegisterCountResponse]

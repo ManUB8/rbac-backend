@@ -17,6 +17,7 @@ from schemas.schemas_position import (
 )
 
 router = APIRouter(prefix="/position/v1", tags=["Position"])
+DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
 
 
 def get_unix_time() -> int:
@@ -33,6 +34,7 @@ def build_student_position_response(item: StudentPosition):
         "start_date": item.start_date,
         "end_date": item.end_date,
     }
+
 
 
 # =========================
