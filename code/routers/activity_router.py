@@ -349,9 +349,11 @@ def delete_activity(
     
 @router.get("/filter-info", response_model=list[AdminActivityFilterInfo])
 def get_activity_filter_info(db: Session = Depends(get_db)):
+
     activities = (
         db.query(Activity)
-        .order_by(Activity.activity_id.desc())
+        .filter(Activity.activity_status == True)
+        .order_by(Activity.activity_date.desc())
         .all()
     )
 
@@ -359,7 +361,7 @@ def get_activity_filter_info(db: Session = Depends(get_db)):
         {
             "id": 0,
             "name": "ทั้งหมด",
-            "code": "",
+            "code": ""
         }
     ]
 
@@ -367,7 +369,7 @@ def get_activity_filter_info(db: Session = Depends(get_db)):
         result.append({
             "id": activity.activity_id,
             "name": activity.activity_name,
-            "code": str(activity.activity_id),
+            "code": str(activity.activity_id)
         })
 
     return result
