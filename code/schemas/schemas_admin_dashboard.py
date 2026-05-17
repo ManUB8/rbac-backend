@@ -1,6 +1,21 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+class SimpleCountSummary(BaseModel):
+    total_student: int
+    joined_count: int
+    not_joined_count: int
+
+
+class SimpleMajorInFacultyCount(SimpleCountSummary):
+    major_id: int
+    major_name: str
+
+
+class SimpleFacultyWithMajorCount(SimpleCountSummary):
+    faculty_id: int
+    faculty_name: str
+    major: List[SimpleMajorInFacultyCount]
 
 class CountSummary(BaseModel):
     count_student: int
@@ -90,7 +105,8 @@ class AdminStudentItem(BaseModel):
     major_rank: List[MajorRankItem]
 
     year_count: List[YearCount]
-    faculty: List[FacultyWithMajorCount]
+    # faculty: List[FacultyWithMajorCount]
+    faculty: List[SimpleFacultyWithMajorCount]
 
 
 class AdminStudentMessageResponse(BaseModel):
