@@ -20,7 +20,8 @@ def get_db():
         db.close()
 
 
-YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4", "บัณฑิต"]
+# YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4", "บัณฑิต"]
+YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"]
 
 
 def calc_percent(part: int, total: int) -> float:
