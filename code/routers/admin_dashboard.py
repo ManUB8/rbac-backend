@@ -451,6 +451,10 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     faculty_rank = []
     major_rank = []
 
+    faculty_result = []
+    faculty_rank = []
+    major_rank = []
+
     for faculty in faculties:
         faculty_rank_item = build_faculty_rank_item(
             db=db,
@@ -477,55 +481,55 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
                 activity_id=activity_id
             )
 
+            # major_rank เอาไว้ดูละเอียด มี checkin checkout percent
             major_rank.append(major_rank_item)
 
+            # faculty.major เอาไว้แสดงแบบง่าย
             major_result.append({
                 "major_id": major.major_id,
                 "major_name": major.major_name,
-
                 "total_student": major_rank_item["total_student"],
-                "count_student": count_students(
-                    db=db,
-                    activity_id=activity_id,
-                    major_id=major.major_id
-                ),
                 "joined_count": major_rank_item["joined_count"],
                 "not_joined_count": major_rank_item["not_joined_count"],
-                "checkin_count": major_rank_item["checkin_count"],
-                "checkout_count": major_rank_item["checkout_count"],
-                "join_rate_percent": major_rank_item["join_rate_percent"],
             })
 
+        # เรียงสาขาในคณะ จากเข้าร่วมมาก -> น้อย
+        major_result = sorted(
+            major_result,
+            key=lambda x: x["joined_count"],
+            reverse=True
+        )
+
+        # faculty เอาไว้แสดงแบบง่าย ไม่มี checkin checkout
         faculty_result.append({
             "faculty_id": faculty.faculty_id,
             "faculty_name": faculty.faculty_name,
-
             "total_student": faculty_rank_item["total_student"],
-            "count_student": count_students(
-                db=db,
-                activity_id=activity_id,
-                faculty_id=faculty.faculty_id
-            ),
             "joined_count": faculty_rank_item["joined_count"],
             "not_joined_count": faculty_rank_item["not_joined_count"],
-            "checkin_count": faculty_rank_item["checkin_count"],
-            "checkout_count": faculty_rank_item["checkout_count"],
-            "join_rate_percent": faculty_rank_item["join_rate_percent"],
             "major": major_result,
         })
 
+    # faculty เรียงจากเข้าร่วมมาก -> น้อย
+    faculty_result = sorted(
+        faculty_result,
+        key=lambda x: x["joined_count"],
+        reverse=True
+    )
+
+    # faculty_rank เรียงทั้งหมด ไม่ตัด top 10
     faculty_rank = sorted(
         faculty_rank,
         key=lambda x: x["joined_count"],
         reverse=True
-    )[:10]
+    )
 
+    # major_rank เรียงทั้งหมด ไม่ตัด top 10
     major_rank = sorted(
         major_rank,
         key=lambda x: x["joined_count"],
         reverse=True
-    )[:10]
-
+    )
     return {
         "detail": "success",
         "data": {
