@@ -36,6 +36,9 @@ class StudentActivityViewItemResponse(BaseModel):
     activity_date: date
     activity_time_text: str
     location: Optional[str] = None
+    faculty_name: Optional[str] = None
+    major_name: Optional[str] = None
+    year_status: Optional[str] = None
 
     check_type: str
     require_registration: bool
@@ -191,14 +194,22 @@ class StudentActivityAllInOneActivityItem(BaseModel):
 class StudentActivityAllInOneStudentItem(BaseModel):
     student_id: int
     student_code: str
+
     full_name: str
     first_name: str
     last_name: str
+
     faculty_id: Optional[int] = None
+    faculty_name: Optional[str] = None
+
     major_id: Optional[int] = None
+    major_name: Optional[str] = None
+
     year_status: Optional[str] = None
+
     total_activity: int
     total_hours: float = 0
+
     activity: List[StudentActivityAllInOneActivityItem]
 
 class StudentActivityAllInOneResponse(BaseModel):
