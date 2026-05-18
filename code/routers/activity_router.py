@@ -95,7 +95,6 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         db.query(ActivityHourType)
         .filter(
             ActivityHourType.hour_type_id == data.hour_type_id,
-            ActivityHourType.is_active == True
         )
         .first()
     )
@@ -298,7 +297,6 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
             db.query(ActivityHourType)
             .filter(
                 ActivityHourType.hour_type_id == update_data["hour_type_id"],
-                ActivityHourType.is_active == True
             )
             .first()
         )
