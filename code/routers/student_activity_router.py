@@ -147,6 +147,9 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "activity_id": activity.activity_id,
         "student_code": student.student_code,
         "full_name": f"{student.first_name} {student.last_name}",
+        "faculty_name": student.faculty_name,
+        "major_name": student.major_name,
+        "year_status": student.year_status,
         "activity_name": activity.activity_name,
         "activity_date": activity.activity_date,
         "activity_time_text": format_activity_time_text(
@@ -718,8 +721,6 @@ def get_all_student_activities_admin(
         "data": result
     }
     
-
-
 @router.post("/admin/get-allinone", response_model=StudentActivityAllInOneResponse)
 def get_student_activity_all_in_one(
     body: StudentActivityAllInOneSearchRequest,
@@ -803,6 +804,8 @@ def get_student_activity_all_in_one(
             "faculty_id": student.faculty_id,
             "major_id": student.major_id,
             "year_status": student.year_status,
+            "faculty_name": student.faculty_name,
+            "major_name": student.major_name,
             "total_activity": 0,
             "total_hours": 0,
             "activity": []
