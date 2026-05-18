@@ -14,6 +14,8 @@ from sqlalchemy import (
     UniqueConstraint,
     CheckConstraint,
 )
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 
 # =========================
@@ -177,6 +179,9 @@ class Activity(Base):
     description = Column(Text, nullable=True)
     activity_img = Column(Text, nullable=True)
     activity_status = Column(Boolean, nullable=False, default=True)
+    
+    hour_type_id = Column(UUID(as_uuid=True), ForeignKey("activity_hour_types.hour_type_id"), nullable=True)
+    hour_type = relationship("ActivityHourType")
 
     created_by_id = Column(Integer, nullable=True)
     created_by_name = Column(String(150), nullable=True)
@@ -279,3 +284,9 @@ class StudentPosition(Base):
 
     student = relationship("Student", back_populates="student_positions")
     position = relationship("Position", back_populates="student_positions")
+    
+class ActivityHourType(Base):
+    __tablename__ = "activity_hour_types"
+
+    hour_type_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    hour_type_name = Column(String(100), nullable=False)
