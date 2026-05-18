@@ -5,7 +5,7 @@ from datetime import time, datetime
 import time as time_module
 
 from database import SessionLocal
-from models import Activity, User, StudentActivity
+from models import Activity, User, StudentActivity, ActivityHourType
 from schemas.schemas_activity import (
     ActivityCreateRequest,
     ActivityUpdateRequest,
@@ -18,6 +18,7 @@ from schemas.schemas_activity import (
     ActivityAdminListResponse,
     ActivityWithRegisterCountResponse,
     ActivityListPublicResponse,
+    ActivityFilterAllResponse
 )
 
 router = APIRouter(prefix="/activity/v1", tags=["Activity"])
@@ -90,6 +91,17 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
     admin = get_admin_by_name(db, data.created_by_name)
 
     validate_activity_data(data)
+    hour_type = (
+        db.query(ActivityHourType)
+        .filter(
+            ActivityHourType.hour_type_id == data.hour_type_id,
+            ActivityHourType.is_active == True
+        )
+        .first()
+    )
+
+    if not hour_type:
+        raise HTTPException(status_code=400, detail="ไม่พบประเภทชั่วโมงกิจกรรม")
 
     now = get_unix_time()
 
@@ -103,6 +115,7 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         description=data.description,
         activity_img=data.activity_img,
         activity_status=data.activity_status,
+        hour_type_id=data.hour_type_id,
 
         check_type=data.check_type,
         require_registration=data.require_registration,
@@ -205,6 +218,8 @@ def get_all_activities_admin(
     if data.require_registration != "":
         require_registration_bool = data.require_registration.lower() == "true"
         query = query.filter(Activity.require_registration == require_registration_bool)
+    if data.hour_type_id != "":
+        query = query.filter(Activity.hour_type_id == data.hour_type_id)
 
     total_activity = query.count()
 
@@ -277,6 +292,19 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
 
     new_start_time = update_data.get("start_time", activity.start_time)
     new_end_time = update_data.get("end_time", activity.end_time)
+    
+    if "hour_type_id" in update_data:
+        hour_type = (
+            db.query(ActivityHourType)
+            .filter(
+                ActivityHourType.hour_type_id == update_data["hour_type_id"],
+                ActivityHourType.is_active == True
+            )
+            .first()
+        )
+
+    if not hour_type:
+        raise HTTPException(status_code=400, detail="ไม่พบประเภทชั่วโมงกิจกรรม")
 
     if new_start_time >= new_end_time:
         raise HTTPException(status_code=400, detail="เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด")
@@ -373,3 +401,59 @@ def get_activity_filter_info(db: Session = Depends(get_db)):
         })
 
     return result
+
+
+@router.get("/filter-all", response_model=ActivityFilterAllResponse)
+def get_activity_filter_all(db: Session = Depends(get_db)):
+    hour_types = (
+        db.query(ActivityHourType)
+        .order_by(ActivityHourType.hour_type_name.asc())
+        .all()
+    )
+
+    return {
+        "hour_type": [
+            {
+                "label": item.hour_type_name,
+                "id": str(item.hour_type_id)
+            }
+            for item in hour_types
+        ],
+
+        "check_type": [
+            {
+                "label": "เช็คอินอย่างเดียว",
+                "id": "checkin_only"
+            },
+            {
+                "label": "เช็คเอาท์อย่างเดียว",
+                "id": "checkout_only"
+            },
+            {
+                "label": "เช็คอิน / เช็คเอาท์",
+                "id": "checkin_checkout"
+            }
+        ],
+
+        "activity_status": [
+            {
+                "label": "เปิดใช้งาน",
+                "id": "true"
+            },
+            {
+                "label": "ปิดการใช้งาน",
+                "id": "false"
+            }
+        ],
+
+        "require_registration": [
+            {
+                "label": "ต้องลงทะเบียนก่อน",
+                "id": "true"
+            },
+            {
+                "label": "เข้าร่วมได้เลย",
+                "id": "false"
+            }
+        ]
+    }

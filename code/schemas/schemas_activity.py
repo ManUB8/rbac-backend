@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator, field_serializer
 from typing import Optional, List
 from datetime import date, time
-
+from uuid import UUID
 
 def parse_time_dot(value):
     if value is None:
@@ -24,7 +24,14 @@ def validate_check_type(value: str):
         raise ValueError("check_type ต้องเป็น checkin_only หรือ checkin_checkout")
     return value
 
+class HourTypeResponse(BaseModel):
+    hour_type_id: UUID
+    hour_type_name: str
 
+    model_config = {
+        "from_attributes": True
+    }
+    
 class ActivityCreateRequest(BaseModel):
     activity_name: str
     activity_date: date
@@ -36,6 +43,7 @@ class ActivityCreateRequest(BaseModel):
     activity_img: Optional[str] = None
     activity_status: bool = True
     created_by_name: str
+    hour_type_id: UUID
 
     check_type: str = "checkin_only"
     require_registration: bool = False
@@ -68,6 +76,7 @@ class ActivityUpdateRequest(BaseModel):
     activity_img: Optional[str] = None
     activity_status: Optional[bool] = None
     updated_by_name: str
+    hour_type_id: Optional[UUID] = None
 
     check_type: Optional[str] = None
     require_registration: Optional[bool] = None
@@ -106,6 +115,8 @@ class ActivityResponse(BaseModel):
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool
+    hour_type_id: Optional[UUID] = None
+    hour_type: Optional[HourTypeResponse] = None
 
     check_type: str
     require_registration: bool
@@ -169,7 +180,7 @@ class ActivityAdminSearchRequest(BaseModel):
     search: str = ""
     page: int = 1
     limit: int = 10
-
+    hour_type_id: str = ""
     activity_status: str = ""
     check_type: str = ""
     require_registration: str = ""
@@ -181,3 +192,14 @@ class ActivityAdminListResponse(BaseModel):
     total_inactive_activity: int
 
     activity: List[ActivityWithRegisterCountResponse]
+
+class FilterOption(BaseModel):
+    label: str
+    id: str
+
+
+class ActivityFilterAllResponse(BaseModel):
+    hour_type: List[FilterOption]
+    check_type: List[FilterOption]
+    activity_status: List[FilterOption]
+    require_registration: List[FilterOption]

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
 from math import radians, sin, cos, sqrt, atan2
 import time as time_module
+from sqlalchemy import func, or_
 
 from database import get_db
 from models import Student, Activity, StudentActivity, User
@@ -16,7 +16,11 @@ from schemas.schemas_student_activity import (
     StudentActivityDeleteResponse,
     StudentActivityDeleteRequest,
     StudentActivityUpdateRequest,
-     StudentActivityAvailableListResponse,
+    StudentActivityAvailableListResponse,
+    StudentActivityAdminSearchRequest,
+    StudentActivityAdminListResponse,
+    StudentActivityAllInOneSearchRequest,
+    StudentActivityAllInOneResponse,
     
 )
 
@@ -393,58 +397,106 @@ def get_student_activity(student_activity_id: int, db: Session = Depends(get_db)
 
 
 @router.patch("/update/{student_activity_id}", response_model=StudentActivityResponse)
-def update_student_activity(student_activity_id: int, body: StudentActivityUpdateRequest, db: Session = Depends(get_db)):
+def update_student_activity(
+    student_activity_id: int,
+    body: StudentActivityUpdateRequest,
+    db: Session = Depends(get_db)
+):
     if student_activity_id != body.student_activity_id:
-        raise HTTPException(status_code=500, detail="student_activity_id ใน URL และ body ไม่ตรงกัน")
+        raise HTTPException(
+            status_code=400,
+            detail="student_activity_id ใน URL และ body ไม่ตรงกัน"
+        )
 
     admin = get_admin_by_name(db, body.updated_by_name)
 
-    item = db.query(StudentActivity).filter(
-        StudentActivity.student_activity_id == student_activity_id
-    ).first()
+    item = (
+        db.query(StudentActivity)
+        .options(
+            joinedload(StudentActivity.student),
+            joinedload(StudentActivity.activity)
+        )
+        .filter(StudentActivity.student_activity_id == student_activity_id)
+        .first()
+    )
 
     if not item:
-        raise HTTPException(status_code=500, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
+        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลการเข้าร่วมกิจกรรม")
 
-    student = db.query(Student).filter(Student.student_id == item.student_id).first()
+    student = item.student
+    activity = item.activity
+
     if not student:
-        raise HTTPException(status_code=500, detail="ไม่พบนิสิต")
+        raise HTTPException(status_code=404, detail="ไม่พบนิสิต")
 
-    activity = db.query(Activity).filter(Activity.activity_id == item.activity_id).first()
     if not activity:
-        raise HTTPException(status_code=500, detail="ไม่พบกิจกรรม")
-
-    if body.student_id is not None:
-        new_student = db.query(Student).filter(Student.student_id == body.student_id).first()
-        if not new_student:
-            raise HTTPException(status_code=500, detail="ไม่พบนิสิตจากรหัสใหม่")
-        item.student_id = new_student.student_id
-        student = new_student
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
 
     if body.activity_id is not None:
-        new_activity = db.query(Activity).filter(Activity.activity_id == body.activity_id).first()
+        new_activity = (
+            db.query(Activity)
+            .filter(Activity.activity_id == body.activity_id)
+            .first()
+        )
+
         if not new_activity:
-            raise HTTPException(status_code=500, detail="ไม่พบกิจกรรมใหม่")
+            raise HTTPException(status_code=404, detail="ไม่พบกิจกรรมใหม่")
+
+        duplicate = (
+            db.query(StudentActivity)
+            .filter(
+                StudentActivity.student_id == item.student_id,
+                StudentActivity.activity_id == new_activity.activity_id,
+                StudentActivity.student_activity_id != item.student_activity_id
+            )
+            .first()
+        )
+
+        if duplicate:
+            raise HTTPException(
+                status_code=400,
+                detail="นิสิตคนนี้มีข้อมูลกิจกรรมนี้อยู่แล้ว"
+            )
+
         item.activity_id = new_activity.activity_id
         activity = new_activity
 
     if body.attendance_status is not None:
         if body.attendance_status not in ["เข้าร่วม", "ไม่เข้าร่วม"]:
-            raise HTTPException(status_code=500, detail="attendance_status ต้องเป็น 'เข้าร่วม' หรือ 'ไม่เข้าร่วม'")
-        item.attendance_status = body.attendance_status
-        item.checkin_at = get_unix_time() if body.attendance_status == "เข้าร่วม" else None
+            raise HTTPException(
+                status_code=400,
+                detail="attendance_status ต้องเป็น 'เข้าร่วม' หรือ 'ไม่เข้าร่วม'"
+            )
 
-    duplicate = (
-        db.query(StudentActivity)
-        .filter(
-            StudentActivity.student_id == item.student_id,
-            StudentActivity.activity_id == item.activity_id,
-            StudentActivity.student_activity_id != item.student_activity_id
-        )
-        .first()
-    )
-    if duplicate:
-        raise HTTPException(status_code=500, detail="มีข้อมูลนิสิตและกิจกรรมนี้อยู่แล้ว")
+        now = get_unix_time()
+        item.attendance_status = body.attendance_status
+
+        if body.attendance_status == "ไม่เข้าร่วม":
+            item.checkin_at = None
+            item.checkout_at = None
+            item.checkin_lat = None
+            item.checkin_lng = None
+            item.checkout_lat = None
+            item.checkout_lng = None
+
+        if body.attendance_status == "เข้าร่วม":
+            if activity.check_type == "checkin_only":
+                item.checkin_at = item.checkin_at or now
+                item.checkout_at = None
+
+            elif activity.check_type == "checkout_only":
+                item.checkout_at = item.checkout_at or now
+                item.checkin_at = None
+
+            elif activity.check_type == "checkin_checkout":
+                item.checkin_at = item.checkin_at or now
+                item.checkout_at = item.checkout_at or now
+
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="check_type ไม่ถูกต้อง"
+                )
 
     item.updated_by_id = admin.user_id
     item.updated_by_name = admin.name
@@ -457,7 +509,7 @@ def update_student_activity(student_activity_id: int, body: StudentActivityUpdat
         "detail": "แก้ไขข้อมูลการเข้าร่วมกิจกรรมสำเร็จ",
         "data": build_student_activity_response(item, student, activity)
     }
-
+    
 
 @router.delete(
     "/delete/{student_activity_id}",
@@ -587,4 +639,206 @@ def get_available_activities_for_student(
         "detail": "ดึงข้อมูลกิจกรรมสำหรับนิสิตสำเร็จ",
         "student_code": student_code,
         "data": result
+    }
+    
+@router.post("/admin/get-all", response_model=StudentActivityAdminListResponse)
+def get_all_student_activities_admin(
+    body: StudentActivityAdminSearchRequest,
+    db: Session = Depends(get_db)
+):
+    page = max(body.page, 1)
+    limit = max(body.limit, 1)
+    offset = (page - 1) * limit
+
+    query = (
+        db.query(StudentActivity)
+        .join(Student, Student.student_id == StudentActivity.student_id)
+        .join(Activity, Activity.activity_id == StudentActivity.activity_id)
+        .options(
+            joinedload(StudentActivity.student),
+            joinedload(StudentActivity.activity)
+        )
+    )
+
+    if body.activity_id != "":
+        query = query.filter(StudentActivity.activity_id == int(body.activity_id))
+
+    if body.student_code != "":
+        query = query.filter(Student.student_code.ilike(f"%{body.student_code}%"))
+
+    if body.search != "":
+        search_text = f"%{body.search}%"
+        full_name = func.concat(Student.first_name, " ", Student.last_name)
+
+        query = query.filter(
+            or_(
+                Student.student_code.ilike(search_text),
+                Student.first_name.ilike(search_text),
+                Student.last_name.ilike(search_text),
+                full_name.ilike(search_text),
+            )
+        )
+
+    if body.year_status != "":
+        query = query.filter(Student.year_status == int(body.year_status))
+
+    if body.faculty_id != "":
+        query = query.filter(Student.faculty_id == int(body.faculty_id))
+
+    if body.major_id != "":
+        query = query.filter(Student.major_id == int(body.major_id))
+
+    total_all = query.count()
+
+    items = (
+        query
+        .order_by(StudentActivity.student_activity_id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    result = []
+
+    for item in items:
+        if item.student and item.activity:
+            result.append(
+                build_student_activity_response(
+                    item,
+                    item.student,
+                    item.activity
+                )
+            )
+
+    return {
+        "detail": "ดึงข้อมูลนิสิตที่เข้าร่วมกิจกรรมสำเร็จ",
+        "total_all": total_all,
+        "page": page,
+        "limit": limit,
+        "data": result
+    }
+    
+
+
+@router.post("/admin/get-allinone", response_model=StudentActivityAllInOneResponse)
+def get_student_activity_all_in_one(
+    body: StudentActivityAllInOneSearchRequest,
+    db: Session = Depends(get_db)
+):
+    has_filter = any([
+        body.search.strip() != "",
+        body.student_code.strip() != "",
+        body.year_status.strip() != "",
+        body.faculty_id.strip() != "",
+        body.major_id.strip() != "",
+        body.hour_type.strip() != "",
+    ])
+
+    if not has_filter:
+        return {
+            "detail": "กรุณาระบุเงื่อนไขค้นหาก่อน",
+            "total_all": 0,
+            "data": []
+        }
+
+    query = (
+        db.query(StudentActivity)
+        .join(Student, Student.student_id == StudentActivity.student_id)
+        .join(Activity, Activity.activity_id == StudentActivity.activity_id)
+        .options(
+            joinedload(StudentActivity.student),
+            joinedload(StudentActivity.activity)
+        )
+    )
+
+    if body.student_code != "":
+        query = query.filter(Student.student_code.ilike(f"%{body.student_code}%"))
+
+    if body.search != "":
+        search_text = f"%{body.search}%"
+        full_name = func.concat(Student.first_name, " ", Student.last_name)
+
+        query = query.filter(
+            or_(
+                Student.first_name.ilike(search_text),
+                Student.last_name.ilike(search_text),
+                full_name.ilike(search_text),
+            )
+        )
+
+    if body.year_status != "":
+        query = query.filter(Student.year_status == body.year_status)
+
+    if body.faculty_id != "":
+        query = query.filter(Student.faculty_id == int(body.faculty_id))
+
+    if body.major_id != "":
+        query = query.filter(Student.major_id == int(body.major_id))
+
+    if body.hour_type != "":
+        query = query.filter(Activity.hour_type_id == body.hour_type)
+
+    items = (
+        query
+        .order_by(Student.student_code.asc(), Activity.activity_date.desc())
+        .all()
+    )
+
+    student_map = {}
+
+    for item in items:
+        student = item.student
+        activity = item.activity
+
+        if not student or not activity:
+            continue
+
+        if student.student_id not in student_map:
+            student_map[student.student_id] = {
+            "student_id": student.student_id,
+            "student_code": student.student_code,
+            "full_name": f"{student.first_name} {student.last_name}",
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "faculty_id": student.faculty_id,
+            "major_id": student.major_id,
+            "year_status": student.year_status,
+            "total_activity": 0,
+            "total_hours": 0,
+            "activity": []
+        }
+
+        student_map[student.student_id]["activity"].append({
+            "student_activity_id": item.student_activity_id,
+            "activity_id": activity.activity_id,
+            "activity_name": activity.activity_name,
+            "activity_date": activity.activity_date,
+            "activity_time_text": format_activity_time_text(
+                activity.start_time,
+                activity.end_time,
+                activity.hours
+            ),
+            "location": activity.location,
+            "activity_img": activity.activity_img,
+            "hours": activity.hours,
+            "hour_type_id": str(activity.hour_type_id) if activity.hour_type_id else None,
+
+            "check_type": activity.check_type,
+            "require_registration": activity.require_registration,
+            "max_participants": activity.max_participants,
+            "attendance_status": item.attendance_status,
+            "registered_at": item.registered_at,
+            "checkin_at": item.checkin_at,
+            "checkout_at": item.checkout_at,
+        })
+
+        student_map[student.student_id]["total_activity"] += 1
+        student_map[student.student_id]["total_hours"] += float(activity.hours or 0)
+
+    data = list(student_map.values())
+
+    return {
+        "detail": "ดึงข้อมูลกิจกรรมทั้งหมดของนิสิตสำเร็จ",
+        "total_all": len(data),
+        "data": data
     }

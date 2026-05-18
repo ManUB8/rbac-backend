@@ -79,10 +79,8 @@ class StudentActivityGetOneRequest(BaseModel):
 
 class StudentActivityUpdateRequest(BaseModel):
     student_activity_id: int
-    student_id: Optional[int] = None
     activity_id: Optional[int] = None
     attendance_status: Optional[str] = None
-    checkin_at: Optional[int] = None
     updated_by_name: str
 
 
@@ -142,3 +140,68 @@ class StudentActivityAvailableListResponse(BaseModel):
     detail: str
     student_code: str
     data: List[StudentActivityAvailableItemResponse]
+    
+class StudentActivityAdminSearchRequest(BaseModel):
+    activity_id: str = ""
+    search: str = ""
+    student_code: str = ""
+    page: int = 1
+    limit: int = 20
+    year_status: str = ""
+    faculty_id: str = ""
+    major_id: str = ""
+
+
+class StudentActivityAdminListResponse(BaseModel):
+    detail: str
+    total_all: int
+    page: int
+    limit: int
+    data: List[StudentActivityViewItemResponse]
+    
+class StudentActivityAllInOneSearchRequest(BaseModel):
+    search: str = ""
+    student_code: str = ""
+    year_status: str = ""
+    faculty_id: str = ""
+    major_id: str = ""
+    hour_type: str = ""
+
+
+class StudentActivityAllInOneActivityItem(BaseModel):
+    student_activity_id: int
+    activity_id: int
+    activity_name: str
+    activity_date: date
+    activity_time_text: str
+    location: Optional[str] = None
+    activity_img: Optional[str] = None
+    hours: Optional[float] = None
+    hour_type_id: Optional[str] = None
+
+    check_type: str
+    require_registration: bool
+    max_participants: Optional[int] = None
+    attendance_status: str
+    registered_at: Optional[int] = None
+    checkin_at: Optional[int] = None
+    checkout_at: Optional[int] = None
+
+
+class StudentActivityAllInOneStudentItem(BaseModel):
+    student_id: int
+    student_code: str
+    full_name: str
+    first_name: str
+    last_name: str
+    faculty_id: Optional[int] = None
+    major_id: Optional[int] = None
+    year_status: Optional[str] = None
+    total_activity: int
+    total_hours: float = 0
+    activity: List[StudentActivityAllInOneActivityItem]
+
+class StudentActivityAllInOneResponse(BaseModel):
+    detail: str
+    total_all: int
+    data: List[StudentActivityAllInOneStudentItem]
