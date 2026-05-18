@@ -739,7 +739,7 @@ def get_student_activity_all_in_one(
         return {
             "detail": "กรุณาระบุเงื่อนไขค้นหาก่อน",
             "total_all": 0,
-            "data": []
+            "data": None
         }
 
     query = (
@@ -838,7 +838,8 @@ def get_student_activity_all_in_one(
         student_map[student.student_id]["total_activity"] += 1
         student_map[student.student_id]["total_hours"] += float(activity.hours or 0)
 
-    data = list(student_map.values())
+    data_list = list(student_map.values())
+    data = data_list[0] if len(data_list) > 0 else None
 
     return {
         "detail": "ดึงข้อมูลกิจกรรมทั้งหมดของนิสิตสำเร็จ",
