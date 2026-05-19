@@ -846,3 +846,62 @@ def get_student_activity_all_in_one(
         "total_all": len(data),
         "data": data
     }
+    
+@router.delete("/admin/delete-all-student-activities")
+def delete_all_student_activities(
+    db: Session = Depends(get_db)
+):
+    total = db.query(StudentActivity).count()
+
+    db.query(StudentActivity).delete()
+
+    db.commit()
+
+    return {
+        "detail": "ลบข้อมูลการเข้าร่วมกิจกรรมทั้งหมดสำเร็จ",
+        "total_deleted": total
+    }
+    
+@router.delete("/admin/delete-all-activities")
+def delete_all_activities(
+    db: Session = Depends(get_db)
+):
+    total_student_activity = db.query(StudentActivity).count()
+    total_activity = db.query(Activity).count()
+
+    db.query(StudentActivity).delete()
+    db.query(Activity).delete()
+
+    db.commit()
+
+    return {
+        "detail": "ลบกิจกรรมทั้งหมดสำเร็จ",
+        "total_deleted_activity": total_activity,
+        "total_deleted_student_activity": total_student_activity
+    }
+
+
+@router.delete("/admin/delete-all-student-activities/{activity_id}")
+def delete_all_student_activity_by_activity(
+    activity_id: int,
+    db: Session = Depends(get_db)
+):
+    total = (
+        db.query(StudentActivity)
+        .filter(StudentActivity.activity_id == activity_id)
+        .count()
+    )
+
+    (
+        db.query(StudentActivity)
+        .filter(StudentActivity.activity_id == activity_id)
+        .delete()
+    )
+
+    db.commit()
+
+    return {
+        "detail": "ลบข้อมูลผู้เข้าร่วมกิจกรรมสำเร็จ",
+        "activity_id": activity_id,
+        "total_deleted": total
+    }

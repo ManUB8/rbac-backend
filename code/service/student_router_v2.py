@@ -21,6 +21,7 @@ from schemas.schemas_student import (
     StudentDetailWithUserResponse,
     StudentFilterRequest,
     StudentFilterResponse,
+    AdminDeleteRequest
 )
 
 router = APIRouter(prefix="/student/v2", tags=["Student V2"])
@@ -924,4 +925,64 @@ def get_all_students_filter(
         "total_all": total_all,
         "total_page": total_page,
         "data": [build_student_response(student) for student in students],
+    }
+    
+@router.delete("/admin/delete-all-students")
+def delete_all_students(
+    body: AdminDeleteRequest,
+    db: Session = Depends(get_db)
+):
+    # =========================
+    # นับข้อมูลก่อนลบ
+    # =========================
+    total_student_activity = db.query(StudentActivity).count()
+    total_students = db.query(Student).count()
+
+    # =========================
+    # ดึง user_id ของ student
+    # =========================
+    student_user_ids = (
+        db.query(Student.user_id)
+        .filter(Student.user_id.isnot(None))
+        .all()
+    )
+
+    user_ids = [item[0] for item in student_user_ids]
+
+    # =========================
+    # ลบ student activities ก่อน
+    # =========================
+    db.query(StudentActivity).delete()
+
+    # =========================
+    # ลบ students
+    # =========================
+    db.query(Student).delete()
+
+    # =========================
+    # ลบเฉพาะ user role student
+    # กัน admin หาย
+    # =========================
+    deleted_users = 0
+
+    if len(user_ids) > 0:
+        deleted_users = (
+            db.query(User)
+            .filter(
+                User.user_id.in_(user_ids),
+                User.role == "student"
+            )
+            .delete(synchronize_session=False)
+        )
+
+    # =========================
+    # commit
+    # =========================
+    db.commit()
+
+    return {
+        "detail": "ลบนิสิตและบัญชีผู้ใช้ทั้งหมดสำเร็จ",
+        "total_deleted_student_activity": total_student_activity,
+        "total_deleted_students": total_students,
+        "total_deleted_users": deleted_users
     }
