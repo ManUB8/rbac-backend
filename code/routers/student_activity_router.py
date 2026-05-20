@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from math import radians, sin, cos, sqrt, atan2
 import time as time_module
-from sqlalchemy import func, or_
+from sqlalchemy import and_, or_, func
 
 from database import get_db
 from models import Student, Activity, StudentActivity, User
@@ -643,7 +643,6 @@ def get_available_activities_for_student(
         "student_code": student_code,
         "data": result
     }
-    
 @router.post("/admin/get-all", response_model=StudentActivityAdminListResponse)
 def get_all_student_activities_admin(
     body: StudentActivityAdminSearchRequest,
@@ -663,14 +662,14 @@ def get_all_student_activities_admin(
         )
     )
 
-    if body.activity_id != "":
+    if body.activity_id.strip() != "":
         query = query.filter(StudentActivity.activity_id == int(body.activity_id))
 
-    if body.student_code != "":
-        query = query.filter(Student.student_code.ilike(f"%{body.student_code}%"))
+    if body.student_code.strip() != "":
+        query = query.filter(Student.student_code.ilike(f"%{body.student_code.strip()}%"))
 
-    if body.search != "":
-        search_text = f"%{body.search}%"
+    if body.search.strip() != "":
+        search_text = f"%{body.search.strip()}%"
         full_name = func.concat(Student.first_name, " ", Student.last_name)
 
         query = query.filter(
@@ -682,13 +681,13 @@ def get_all_student_activities_admin(
             )
         )
 
-    if body.year_status != "":
-        query = query.filter(Student.year_status == int(body.year_status))
+    if body.year_status.strip() != "":
+        query = query.filter(Student.year_status == body.year_status.strip())
 
-    if body.faculty_id != "":
+    if body.faculty_id.strip() != "":
         query = query.filter(Student.faculty_id == int(body.faculty_id))
 
-    if body.major_id != "":
+    if body.major_id.strip() != "":
         query = query.filter(Student.major_id == int(body.major_id))
 
     total_all = query.count()
@@ -720,8 +719,9 @@ def get_all_student_activities_admin(
         "limit": limit,
         "data": result
     }
-    
-@router.post("/admin/get-allinone", response_model=StudentActivityAllInOneResponse)
+
+
+@router.post("/admin/get-allinone-last", response_model=StudentActivityAllInOneResponse)
 def get_student_activity_all_in_one(
     body: StudentActivityAllInOneSearchRequest,
     db: Session = Depends(get_db)
@@ -738,7 +738,6 @@ def get_student_activity_all_in_one(
     if not has_filter:
         return {
             "detail": "กรุณาระบุเงื่อนไขค้นหาก่อน",
-            "total_all": 0,
             "data": None
         }
 
@@ -752,32 +751,33 @@ def get_student_activity_all_in_one(
         )
     )
 
-    if body.student_code != "":
-        query = query.filter(Student.student_code.ilike(f"%{body.student_code}%"))
+    if body.student_code.strip() != "":
+        query = query.filter(Student.student_code.ilike(f"%{body.student_code.strip()}%"))
 
-    if body.search != "":
-        search_text = f"%{body.search}%"
+    if body.search.strip() != "":
+        search_text = f"%{body.search.strip()}%"
         full_name = func.concat(Student.first_name, " ", Student.last_name)
 
         query = query.filter(
             or_(
+                Student.student_code.ilike(search_text),
                 Student.first_name.ilike(search_text),
                 Student.last_name.ilike(search_text),
                 full_name.ilike(search_text),
             )
         )
 
-    if body.year_status != "":
-        query = query.filter(Student.year_status == body.year_status)
+    if body.year_status.strip() != "":
+        query = query.filter(Student.year_status == body.year_status.strip())
 
-    if body.faculty_id != "":
+    if body.faculty_id.strip() != "":
         query = query.filter(Student.faculty_id == int(body.faculty_id))
 
-    if body.major_id != "":
+    if body.major_id.strip() != "":
         query = query.filter(Student.major_id == int(body.major_id))
 
-    if body.hour_type != "":
-        query = query.filter(Activity.hour_type_id == body.hour_type)
+    if body.hour_type.strip() != "":
+        query = query.filter(Activity.hour_type_id == body.hour_type.strip())
 
     items = (
         query
@@ -794,22 +794,34 @@ def get_student_activity_all_in_one(
         if not student or not activity:
             continue
 
+        position_id = getattr(student, "position_id", None)
+        position_name = getattr(student, "position_name", None)
+
+        if position_name is None and hasattr(student, "position"):
+            position_name = student.position.position_name if student.position else None
+
         if student.student_id not in student_map:
             student_map[student.student_id] = {
-            "student_id": student.student_id,
-            "student_code": student.student_code,
-            "full_name": f"{student.first_name} {student.last_name}",
-            "first_name": student.first_name,
-            "last_name": student.last_name,
-            "faculty_id": student.faculty_id,
-            "major_id": student.major_id,
-            "year_status": student.year_status,
-            "faculty_name": student.faculty_name,
-            "major_name": student.major_name,
-            "total_activity": 0,
-            "total_hours": 0,
-            "activity": []
-        }
+                "student_id": student.student_id,
+                "student_code": student.student_code,
+                "prefix": student.prefix,
+                "full_name": f"{student.prefix or ''}{student.first_name} {student.last_name}",
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+
+                "position_id": position_id,
+                "position_name": position_name,
+
+                "faculty_id": student.faculty_id,
+                "major_id": student.major_id,
+                "year_status": student.year_status,
+                "faculty_name": student.faculty_name,
+                "major_name": student.major_name,
+
+                "total_activity": 0,
+                "total_hours": 0,
+                "activity": []
+            }
 
         student_map[student.student_id]["activity"].append({
             "student_activity_id": item.student_activity_id,
@@ -829,6 +841,7 @@ def get_student_activity_all_in_one(
             "check_type": activity.check_type,
             "require_registration": activity.require_registration,
             "max_participants": activity.max_participants,
+
             "attendance_status": item.attendance_status,
             "registered_at": item.registered_at,
             "checkin_at": item.checkin_at,
@@ -843,6 +856,211 @@ def get_student_activity_all_in_one(
 
     return {
         "detail": "ดึงข้อมูลกิจกรรมทั้งหมดของนิสิตสำเร็จ",
-        "total_all": len(data),
         "data": data
+    }
+
+
+@router.post("/admin/get-allinone", response_model=StudentActivityAllInOneResponse)
+def get_student_activity_all_in_one(
+    body: StudentActivityAllInOneSearchRequest,
+    db: Session = Depends(get_db)
+):
+    has_filter = any([
+        body.search.strip() != "",
+        body.student_code.strip() != "",
+        body.year_status.strip() != "",
+        body.faculty_id.strip() != "",
+        body.major_id.strip() != "",
+        body.hour_type.strip() != "",
+    ])
+
+    if not has_filter:
+        return {
+            "detail": "กรุณาระบุเงื่อนไขค้นหาก่อน",
+            "data": None
+        }
+
+    query = (
+        db.query(StudentActivity, StudentPosition, Position)
+        .join(Student, Student.student_id == StudentActivity.student_id)
+        .join(Activity, Activity.activity_id == StudentActivity.activity_id)
+        .outerjoin(
+            StudentPosition,
+            and_(
+                StudentPosition.student_id == Student.student_id,
+                StudentPosition.is_current == True,
+                StudentPosition.end_date.is_(None),
+            )
+        )
+        .outerjoin(Position, Position.position_id == StudentPosition.position_id)
+        .options(
+            joinedload(StudentActivity.student),
+            joinedload(StudentActivity.activity)
+        )
+    )
+
+    if body.student_code.strip() != "":
+        query = query.filter(
+            Student.student_code.ilike(f"%{body.student_code.strip()}%")
+        )
+
+    if body.search.strip() != "":
+        search_text = f"%{body.search.strip()}%"
+        full_name = func.concat(Student.first_name, " ", Student.last_name)
+
+        query = query.filter(
+            or_(
+                Student.student_code.ilike(search_text),
+                Student.first_name.ilike(search_text),
+                Student.last_name.ilike(search_text),
+                full_name.ilike(search_text),
+            )
+        )
+
+    if body.year_status.strip() != "":
+        query = query.filter(Student.year_status == body.year_status.strip())
+
+    if body.faculty_id.strip() != "":
+        query = query.filter(Student.faculty_id == int(body.faculty_id))
+
+    if body.major_id.strip() != "":
+        query = query.filter(Student.major_id == int(body.major_id))
+
+    if body.hour_type.strip() != "":
+        query = query.filter(Activity.hour_type_id == body.hour_type.strip())
+
+    items = (
+        query
+        .order_by(Student.student_code.asc(), Activity.activity_date.desc())
+        .all()
+    )
+
+    student_map = {}
+
+    for item, student_position, position in items:
+        student = item.student
+        activity = item.activity
+
+        if not student or not activity:
+            continue
+
+        if student.student_id not in student_map:
+            student_map[student.student_id] = {
+                "student_id": student.student_id,
+                "student_code": student.student_code,
+                "prefix": student.prefix,
+                "full_name": f"{student.prefix or ''}{student.first_name} {student.last_name}",
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+
+                "position_id": position.position_id if position else None,
+                "position_name": position.position_name if position else None,
+                "student_position_id": student_position.student_position_id if student_position else None,
+                "position_start_date": student_position.start_date if student_position else None,
+                "position_end_date": student_position.end_date if student_position else None,
+
+                "faculty_id": student.faculty_id,
+                "major_id": student.major_id,
+                "year_status": student.year_status,
+                "faculty_name": student.faculty_name,
+                "major_name": student.major_name,
+
+                "total_activity": 0,
+                "total_hours": 0,
+                "activity": []
+            }
+
+        student_map[student.student_id]["activity"].append({
+            "student_activity_id": item.student_activity_id,
+            "activity_id": activity.activity_id,
+            "activity_name": activity.activity_name,
+            "activity_date": activity.activity_date,
+            "activity_time_text": format_activity_time_text(
+                activity.start_time,
+                activity.end_time,
+                activity.hours
+            ),
+            "location": activity.location,
+            "activity_img": activity.activity_img,
+            "hours": activity.hours,
+            "hour_type_id": str(activity.hour_type_id) if activity.hour_type_id else None,
+
+            "check_type": activity.check_type,
+            "require_registration": activity.require_registration,
+            "max_participants": activity.max_participants,
+
+            "attendance_status": item.attendance_status,
+            "registered_at": item.registered_at,
+            "checkin_at": item.checkin_at,
+            "checkout_at": item.checkout_at,
+        })
+
+        student_map[student.student_id]["total_activity"] += 1
+        student_map[student.student_id]["total_hours"] += float(activity.hours or 0)
+
+    data_list = list(student_map.values())
+    data = data_list[0] if len(data_list) > 0 else None
+
+    return {
+        "detail": "ดึงข้อมูลกิจกรรมทั้งหมดของนิสิตสำเร็จ",
+        "data": data
+    }
+    
+@router.delete("/admin/delete-all-student-activities")
+def delete_all_student_activities(
+    db: Session = Depends(get_db)
+):
+    total = db.query(StudentActivity).count()
+
+    db.query(StudentActivity).delete()
+
+    db.commit()
+
+    return {
+        "detail": "ลบข้อมูลการเข้าร่วมกิจกรรมทั้งหมดสำเร็จ",
+        "total_deleted": total
+    }
+    
+@router.delete("/admin/delete-all-activities")
+def delete_all_activities(
+    db: Session = Depends(get_db)
+):
+    total_student_activity = db.query(StudentActivity).count()
+    total_activity = db.query(Activity).count()
+
+    db.query(StudentActivity).delete()
+    db.query(Activity).delete()
+
+    db.commit()
+
+    return {
+        "detail": "ลบกิจกรรมทั้งหมดสำเร็จ",
+        "total_deleted_activity": total_activity,
+        "total_deleted_student_activity": total_student_activity
+    }
+
+
+@router.delete("/admin/delete-all-student-activities/{activity_id}")
+def delete_all_student_activity_by_activity(
+    activity_id: int,
+    db: Session = Depends(get_db)
+):
+    total = (
+        db.query(StudentActivity)
+        .filter(StudentActivity.activity_id == activity_id)
+        .count()
+    )
+
+    (
+        db.query(StudentActivity)
+        .filter(StudentActivity.activity_id == activity_id)
+        .delete()
+    )
+
+    db.commit()
+
+    return {
+        "detail": "ลบข้อมูลผู้เข้าร่วมกิจกรรมสำเร็จ",
+        "activity_id": activity_id,
+        "total_deleted": total
     }

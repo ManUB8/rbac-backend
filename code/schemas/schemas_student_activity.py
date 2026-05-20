@@ -39,7 +39,7 @@ class StudentActivityViewItemResponse(BaseModel):
     faculty_name: Optional[str] = None
     major_name: Optional[str] = None
     year_status: Optional[str] = None
-
+    prefix: Optional[str] = None
     check_type: str
     require_registration: bool
     max_participants: Optional[int] = None
@@ -194,6 +194,12 @@ class StudentActivityAllInOneActivityItem(BaseModel):
 class StudentActivityAllInOneStudentItem(BaseModel):
     student_id: int
     student_code: str
+    prefix: Optional[str] = None
+    position_id: Optional[int] = None
+    position_name: Optional[str] = None
+    student_position_id: Optional[int] = None
+    position_start_date: Optional[date] = None
+    position_end_date: Optional[date] = None
 
     full_name: str
     first_name: str

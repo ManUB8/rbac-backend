@@ -294,3 +294,7 @@ class StudentFilterResponse(BaseModel):
     total_all: int
     total_page: int
     data: List[StudentDetailWithUserResponse]
+    
+    
+class AdminDeleteRequest(BaseModel):
+    updated_by_name: str
