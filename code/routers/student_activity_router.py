@@ -5,7 +5,7 @@ import time as time_module
 from sqlalchemy import and_, or_, func
 
 from database import get_db
-from models import Student, Activity, StudentActivity, User
+from models import Student, Activity, StudentActivity, User, StudentPosition , Position
 from schemas.schemas_student_activity import (
     StudentActivityRegisterRequest,
     StudentActivityCheckinRequest,
@@ -514,10 +514,7 @@ def update_student_activity(
     }
     
 
-@router.delete(
-    "/delete/{student_activity_id}",
-    response_model=StudentActivityDeleteResponse
-)
+@router.delete( "/delete/{student_activity_id}", response_model=StudentActivityDeleteResponse )
 def delete_student_activity(
     student_activity_id: int,
     body: StudentActivityDeleteRequest,
@@ -643,6 +640,7 @@ def get_available_activities_for_student(
         "student_code": student_code,
         "data": result
     }
+
 @router.post("/admin/get-all", response_model=StudentActivityAdminListResponse)
 def get_all_student_activities_admin(
     body: StudentActivityAdminSearchRequest,
@@ -1038,7 +1036,6 @@ def delete_all_activities(
         "total_deleted_activity": total_activity,
         "total_deleted_student_activity": total_student_activity
     }
-
 
 @router.delete("/admin/delete-all-student-activities/{activity_id}")
 def delete_all_student_activity_by_activity(
