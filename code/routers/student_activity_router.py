@@ -879,9 +879,7 @@ def get_student_activity_all_in_one(
         }
 
     query = (
-        db.query(StudentActivity, StudentPosition, Position)
-        .join(Student, Student.student_id == StudentActivity.student_id)
-        .join(Activity, Activity.activity_id == StudentActivity.activity_id)
+        db.query(Student, StudentPosition, Position, StudentActivity, Activity)
         .outerjoin(
             StudentPosition,
             and_(
@@ -891,10 +889,8 @@ def get_student_activity_all_in_one(
             )
         )
         .outerjoin(Position, Position.position_id == StudentPosition.position_id)
-        .options(
-            joinedload(StudentActivity.student),
-            joinedload(StudentActivity.activity)
-        )
+        .outerjoin(StudentActivity, StudentActivity.student_id == Student.student_id)
+        .outerjoin(Activity, Activity.activity_id == StudentActivity.activity_id)
     )
 
     if body.student_code.strip() != "":
@@ -929,17 +925,20 @@ def get_student_activity_all_in_one(
 
     items = (
         query
-        .order_by(Student.student_code.asc(), Activity.activity_date.desc())
+        .order_by(Student.student_code.asc(), Activity.activity_date.desc().nullslast())
         .all()
     )
 
+    if len(items) == 0:
+        return {
+            "detail": "ไม่พบนิสิต",
+            "data": None
+        }
+
     student_map = {}
 
-    for item, student_position, position in items:
-        student = item.student
-        activity = item.activity
-
-        if not student or not activity:
+    for student, student_position, position, student_activity, activity in items:
+        if not student:
             continue
 
         if student.student_id not in student_map:
@@ -968,33 +967,34 @@ def get_student_activity_all_in_one(
                 "activity": []
             }
 
-        student_map[student.student_id]["activity"].append({
-            "student_activity_id": item.student_activity_id,
-            "activity_id": activity.activity_id,
-            "activity_name": activity.activity_name,
-            "activity_date": activity.activity_date,
-            "activity_time_text": format_activity_time_text(
-                activity.start_time,
-                activity.end_time,
-                activity.hours
-            ),
-            "location": activity.location,
-            "activity_img": activity.activity_img,
-            "hours": activity.hours,
-            "hour_type_id": str(activity.hour_type_id) if activity.hour_type_id else None,
+        if student_activity and activity:
+            student_map[student.student_id]["activity"].append({
+                "student_activity_id": student_activity.student_activity_id,
+                "activity_id": activity.activity_id,
+                "activity_name": activity.activity_name,
+                "activity_date": activity.activity_date,
+                "activity_time_text": format_activity_time_text(
+                    activity.start_time,
+                    activity.end_time,
+                    activity.hours
+                ),
+                "location": activity.location,
+                "activity_img": activity.activity_img,
+                "hours": activity.hours,
+                "hour_type_id": str(activity.hour_type_id) if activity.hour_type_id else None,
 
-            "check_type": activity.check_type,
-            "require_registration": activity.require_registration,
-            "max_participants": activity.max_participants,
+                "check_type": activity.check_type,
+                "require_registration": activity.require_registration,
+                "max_participants": activity.max_participants,
 
-            "attendance_status": item.attendance_status,
-            "registered_at": item.registered_at,
-            "checkin_at": item.checkin_at,
-            "checkout_at": item.checkout_at,
-        })
+                "attendance_status": student_activity.attendance_status,
+                "registered_at": student_activity.registered_at,
+                "checkin_at": student_activity.checkin_at,
+                "checkout_at": student_activity.checkout_at,
+            })
 
-        student_map[student.student_id]["total_activity"] += 1
-        student_map[student.student_id]["total_hours"] += float(activity.hours or 0)
+            student_map[student.student_id]["total_activity"] += 1
+            student_map[student.student_id]["total_hours"] += float(activity.hours or 0)
 
     data_list = list(student_map.values())
     data = data_list[0] if len(data_list) > 0 else None

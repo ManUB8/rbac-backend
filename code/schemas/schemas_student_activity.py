@@ -220,5 +220,4 @@ class StudentActivityAllInOneStudentItem(BaseModel):
 
 class StudentActivityAllInOneResponse(BaseModel):
     detail: str
-    total_all: int
     data: Optional[StudentActivityAllInOneStudentItem] = None
