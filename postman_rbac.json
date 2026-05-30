@@ -1,0 +1,2606 @@
+{
+  "info": {
+    "name": "RBAC Activity API",
+    "description": "Generated from FastAPI OpenAPI routes. Review sample bodies before sending.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Faculty & Majors",
+      "item": [
+        {
+          "name": "POST /faculty-majors/v1/faculties",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/faculties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "faculties"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Faculty",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"faculty_name\": \"\",\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /faculty-majors/v1/faculties-all",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/faculties-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "faculties-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Faculties With Majors"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /faculty-majors/v1/get-one/faculties/{faculty_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/get-one/faculties/:faculty_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "get-one",
+                "faculties",
+                ":faculty_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "faculty_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Faculty With Majors"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /faculty-majors/v1/update/faculties/{faculty_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/update/faculties/:faculty_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "update",
+                "faculties",
+                ":faculty_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "faculty_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Faculty",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"faculty_name\": \"\",\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /faculty-majors/v1/delete/faculties/{faculty_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/delete/faculties/:faculty_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "delete",
+                "faculties",
+                ":faculty_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "faculty_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Faculty",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /faculty-majors/v1/majors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/majors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "majors"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Major",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"major_name\": \"\",\n  \"faculty_id\": 1,\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /faculty-majors/v1/majors-all",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/majors-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "majors-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Majors"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /faculty-majors/v1/get-one/majors/{major_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/get-one/majors/:major_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "get-one",
+                "majors",
+                ":major_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "major_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Major"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /faculty-majors/v1/majors/{major_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/majors/:major_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "majors",
+                ":major_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "major_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Major",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"major_name\": \"\",\n  \"faculty_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /faculty-majors/v1/delete/majors/{major_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/delete/majors/:major_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "delete",
+                "majors",
+                ":major_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "major_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Major",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /faculty-majors/v1/bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/faculty-majors/v1/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faculty-majors",
+                "v1",
+                "bulk"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Faculties With Majors",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"faculty_name\": \"\",\n    \"majors\": [\n      \"\"\n    ],\n    \"created_by_name\": \"\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student Register",
+      "item": [
+        {
+          "name": "POST /student/v1/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Register Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"year_status\": \"\",\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\",\n    \"name\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student/v1/admin/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/admin/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "admin",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Admin Create Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"year_status\": \"\",\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\",\n    \"name\": \"\"\n  },\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /student/v1/update/{student_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/update/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "update",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"major_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_name\": \"\",\n  \"img_stu\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /student/v1/admin/update-stu/{student_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/admin/update-stu/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "admin",
+                "update-stu",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Admin Update Student With User",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 1,\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"updated_by_name\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\"\n  },\n  \"year_status\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student/v1/delete/{student_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/delete/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "delete",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v1/get-all/faculties-student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/get-all/faculties-student",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "get-all",
+                "faculties-student"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Faculties Student"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v1/all-students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/all-students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "all-students"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Students"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v1/get-one/{student_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/get-one/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "get-one",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Student"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v1/get-all/major/{faculty_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/get-all/major/:faculty_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "get-all",
+                "major",
+                ":faculty_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "faculty_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get All Major By Faculty"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v1/get-all/student-major/{major_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/get-all/student-major/:major_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "get-all",
+                "student-major",
+                ":major_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "major_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get All Student By Major"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "POST /activity/v1/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"created_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"checkin_only\",\n  \"require_registration\": false,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /activity/v1/get-all",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Active Activities"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /activity/v1/admin/get-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/admin/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "admin",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Activities Admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"page\": 1,\n  \"limit\": 20,\n  \"hour_type_id\": \"\",\n  \"activity_status\": \"\",\n  \"check_type\": \"\",\n  \"require_registration\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /activity/v1/get-one/{activity_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/get-one/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "get-one",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Activity By Id"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /activity/v1/filter-info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/filter-info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "filter-info"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Activity Filter Info"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /activity/v1/filter-all",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/filter-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "filter-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Activity Filter All"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /activity/v1/update/{activity_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/update/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "update",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": 1,\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"updated_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"\",\n  \"require_registration\": true,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /activity/v1/delete/{activity_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/delete/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "delete",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "POST /user/v1/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create User",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\",\n  \"role\": \"admin\",\n  \"name\": \"\",\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /user/v1/all-users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/all-users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "all-users"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Users"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /user/v1/get-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Users Filter",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"page\": 1,\n  \"limit\": 20,\n  \"role\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /user/v1/get-one/{user_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/get-one/:user_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "get-one",
+                ":user_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get User"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /user/v1/update/{user_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/update/:user_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "update",
+                ":user_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update User",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\",\n  \"role\": \"admin\",\n  \"name\": \"\",\n  \"is_active\": true,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /user/v1/delete/{user_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/v1/delete/:user_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "v1",
+                "delete",
+                ":user_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete User",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deleted_by_name\": \"\",\n  \"deleted_user_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "item": [
+        {
+          "name": "POST /admin-auth/v1/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-auth/v1/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin-auth",
+                "v1",
+                "login"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Admin Login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student Auth",
+      "item": [
+        {
+          "name": "POST /student-auth/v1/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student-auth/v1/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student-auth",
+                "v1",
+                "login"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Student Login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "POST /upload/v1/image-activities",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/v1/image-activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload",
+                "v1",
+                "image-activities"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Upload Image",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "text",
+                  "src": null,
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /upload/v1/student-image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/v1/student-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload",
+                "v1",
+                "student-image"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Upload Student Image",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "text",
+                  "src": null,
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student Activities",
+      "item": [
+        {
+          "name": "POST /student_activities/v1/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Register Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"activity_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student_activities/v1/checkin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/checkin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "checkin"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Checkin Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"activity_id\": 1,\n  \"checkin_lat\": 1,\n  \"checkin_lng\": 1,\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /student_activities/v1/checkout",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "checkout"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Checkout Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"activity_id\": 1,\n  \"checkout_lat\": 1,\n  \"checkout_lng\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student_activities/v1/get-all/",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/get-all/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Student Activities"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student_activities/v1/get-one/{student_activity_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/get-one/:student_activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "get-one",
+                ":student_activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Student Activity"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /student_activities/v1/update/{student_activity_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/update/:student_activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "update",
+                ":student_activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Student Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_activity_id\": 1,\n  \"activity_id\": 1,\n  \"attendance_status\": \"\",\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student_activities/v1/delete/{student_activity_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/delete/:student_activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "delete",
+                ":student_activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Student Activity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_activity_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student_activities/v1/student/available/{student_code}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/student/available/:student_code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "student",
+                "available",
+                ":student_code"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_code",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get Available Activities For Student"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student_activities/v1/admin/get-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Student Activities Admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": \"\",\n  \"search\": \"\",\n  \"student_code\": \"\",\n  \"page\": 1,\n  \"limit\": 20,\n  \"year_status\": \"\",\n  \"faculty_id\": \"\",\n  \"major_id\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student_activities/v1/admin/get-allinone-last",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/get-allinone-last",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "get-allinone-last"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Student Activity All In One",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"student_code\": \"\",\n  \"year_status\": \"\",\n  \"faculty_id\": \"\",\n  \"major_id\": \"\",\n  \"hour_type\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student_activities/v1/admin/get-allinone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/get-allinone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "get-allinone"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Student Activity All In One",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"student_code\": \"\",\n  \"year_status\": \"\",\n  \"faculty_id\": \"\",\n  \"major_id\": \"\",\n  \"hour_type\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student_activities/v1/admin/delete-all-student-activities",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/delete-all-student-activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "delete-all-student-activities"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Delete All Student Activities"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student_activities/v1/admin/delete-all-activities",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/delete-all-activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "delete-all-activities"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Delete All Activities"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student_activities/v1/admin/delete-all-student-activities/{activity_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student_activities/v1/admin/delete-all-student-activities/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student_activities",
+                "v1",
+                "admin",
+                "delete-all-student-activities",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete All Student Activity By Activity"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Admin Dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/student/{student_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/student/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "student",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Student Dashboard"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Position",
+      "item": [
+        {
+          "name": "POST /position/v1/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Position",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"position_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /position/v1/get-all",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Positions"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /position/v1/get-one/{position_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/get-one/:position_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "get-one",
+                ":position_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "position_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Position By Id"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /position/v1/update/{position_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/update/:position_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "update",
+                ":position_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "position_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Position",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"position_id\": 1,\n  \"position_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /position/v1/delete/{position_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/delete/:position_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "delete",
+                ":position_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "position_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Position"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /position/v1/student-position/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/student-position/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "student-position",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Create Student Position",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 1,\n  \"position_id\": 1,\n  \"start_date\": \"2026-05-30\",\n  \"end_date\": \"2026-05-30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /position/v1/student-position/student/{student_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/student-position/student/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "student-position",
+                "student",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Student Positions"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /position/v1/student-position/update/{student_position_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/student-position/update/:student_position_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "student-position",
+                "update",
+                ":student_position_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_position_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update Student Position",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_position_id\": 1,\n  \"position_id\": 1,\n  \"is_current\": true,\n  \"start_date\": \"2026-05-30\",\n  \"end_date\": \"2026-05-30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /position/v1/student-position/delete/{student_position_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/position/v1/student-position/delete/:student_position_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "position",
+                "v1",
+                "student-position",
+                "delete",
+                ":student_position_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_position_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Student Position"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student V2",
+      "item": [
+        {
+          "name": "POST /student/v2/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Register Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"year_status\": \"\",\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\",\n    \"name\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student/v2/admin/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/admin/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "admin",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Admin Create Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"year_status\": \"\",\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\",\n    \"name\": \"\"\n  },\n  \"created_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /student/v2/admin/update-stu/{student_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/admin/update-stu/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "admin",
+                "update-stu",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Admin Update Student With User",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 1,\n  \"student_code\": \"\",\n  \"prefix\": \"\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"gender\": \"\",\n  \"faculty_id\": 1,\n  \"faculty_name\": \"\",\n  \"major_id\": 1,\n  \"major_name\": \"\",\n  \"img_stu\": \"\",\n  \"updated_by_name\": \"\",\n  \"position\": {\n    \"position_id\": 1,\n    \"position_name\": \"\",\n    \"start_date\": \"2026-05-30\",\n    \"end_date\": \"2026-05-30\"\n  },\n  \"user\": {\n    \"username\": \"\",\n    \"password\": \"\"\n  },\n  \"year_status\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student/v2/delete/{student_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/delete/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "delete",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete Student",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/all-students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/all-students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "all-students"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get Students"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/get-one/{student_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-one/:student_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-one",
+                ":student_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get Student"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/get-all/faculties-student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-all/faculties-student",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-all",
+                "faculties-student"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Faculties Student"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/get-all/major/{faculty_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-all/major/:faculty_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-all",
+                "major",
+                ":faculty_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "faculty_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get All Major By Faculty"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/get-all/student-major/{major_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-all/student-major/:major_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-all",
+                "student-major",
+                ":major_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "major_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get All Student By Major"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /student/v2/get-all/filter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-all/filter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-all",
+                "filter"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Get All Students Filter",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"page\": 1,\n  \"limit\": 10,\n  \"faculty_id\": 1,\n  \"major_id\": 1,\n  \"year_status\": \"\",\n  \"position_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/get-all/filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/get-all/filter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "get-all",
+                "filter"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": false
+                },
+                {
+                  "key": "faculty_id",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "major_id",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "position_id",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "year_status",
+                  "value": "",
+                  "disabled": false
+                }
+              ],
+              "variable": []
+            },
+            "description": "Get All Students Filter"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /student/v2/admin/delete-all-students",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/admin/delete-all-students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "admin",
+                "delete-all-students"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Delete All Students",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -30,6 +30,10 @@ origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:8000",
+    "http://192.168.1.36:5173/",
+    "http://192.168.1.33:5173/",
+    "https://config.rbac-front.pages.dev",
+    "https://deve.rbac-front.pages.dev"
 ]
 
 app.add_middleware(

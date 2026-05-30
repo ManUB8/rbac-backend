@@ -40,7 +40,7 @@ class User(Base):
     updated_at = Column(BigInteger, nullable=True)
 
     __table_args__ = (
-        CheckConstraint("role IN ('admin', 'student')", name="check_user_role"),
+        CheckConstraint("role IN ('admin', 'student', 'temporary_admin')", name="check_user_role"),
     )
 
     student = relationship(
@@ -175,10 +175,15 @@ class Activity(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     hours = Column(Numeric(4, 2), nullable=False)
+    volunteer_hours = Column(Numeric(4, 2), nullable=False, default=0)
     location = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
     activity_img = Column(Text, nullable=True)
     activity_status = Column(Boolean, nullable=False, default=True)
+    checkin_open_time = Column(Time, nullable=True)
+    checkin_close_time = Column(Time, nullable=True)
+    checkout_open_time = Column(Time, nullable=True)
+    checkout_close_time = Column(Time, nullable=True)
     
     hour_type_id = Column(UUID(as_uuid=True), ForeignKey("activity_hour_types.hour_type_id"), nullable=True)
     hour_type = relationship("ActivityHourType")
@@ -218,6 +223,9 @@ class StudentActivity(Base):
 
     attendance_status = Column(String(20), nullable=False, default="ไม่เข้าร่วม")
     checkin_at = Column(BigInteger, nullable=True)
+    checkin_status = Column(String(20), nullable=True)
+    checkout_status = Column(String(20), nullable=True)
+    earned_hours = Column(Numeric(4, 2), nullable=False, default=0)
 
     created_by_id = Column(Integer, nullable=True)
     created_by_name = Column(String(150), nullable=True)
@@ -245,6 +253,8 @@ class StudentActivity(Base):
             name="chk_attendance_status"
         ),
     )
+    
+
     
 class Position(Base):
     __tablename__ = "positions"

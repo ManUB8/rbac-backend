@@ -11,6 +11,8 @@ from schemas.schemas_user import (
     UserMessageResponse,
     UserDeleteRequest,
     UserDeleteResponse,
+    UserGetAllRequest,
+    UserGetAllResponse,
 )
 
 router = APIRouter(prefix="/user/v1", tags=["User Management"])
@@ -73,6 +75,42 @@ def create_user(data: UserCreateRequest, db: Session = Depends(get_db)):
 @router.get("/all-users", response_model=list[UserResponse])
 def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
+
+
+@router.post("/get-all", response_model=UserGetAllResponse)
+def get_all_users_filter(data: UserGetAllRequest, db: Session = Depends(get_db)):
+    page = max(data.page, 1)
+    limit = max(data.limit, 1)
+    offset = (page - 1) * limit
+
+    query = db.query(User)
+
+    if data.search:
+        search_text = f"%{data.search}%"
+        query = query.filter(User.name.ilike(search_text))
+
+    if data.role:
+        query = query.filter(User.role == data.role)
+
+    total_all = query.count()
+    total_page = (total_all + limit - 1) // limit if total_all else 0
+
+    users = (
+        query
+        .order_by(User.user_id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "detail": "ดึงข้อมูลผู้ใช้งานสำเร็จ",
+        "page": page,
+        "limit": limit,
+        "total_all": total_all,
+        "total_page": total_page,
+        "data": users,
+    }
 
 
 @router.get("/get-one/{user_id}", response_model=UserResponse)

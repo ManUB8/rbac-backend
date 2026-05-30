@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import List, Optional, Literal
 
 
 class UserDeleteRequest(BaseModel):
@@ -16,7 +16,7 @@ class UserDeleteResponse(BaseModel):
 class UserCreateRequest(BaseModel):
     username: str
     password: str
-    role: Literal["admin", "student"]
+    role: Literal["admin", "student", "temporary_admin"]
     name: str
     created_by_name: Optional[str] = None
 
@@ -24,7 +24,7 @@ class UserCreateRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
-    role: Optional[Literal["admin", "student"]] = None
+    role: Optional[Literal["admin", "student", "temporary_admin"]] = None
     name: Optional[str] = None
     is_active: Optional[bool] = None
     updated_by_name: Optional[str] = None
@@ -33,6 +33,7 @@ class UserUpdateRequest(BaseModel):
 class UserResponse(BaseModel):
     user_id: int
     username: str
+    password: str
     role: str
     name: Optional[str] = None
     is_active: bool
@@ -62,6 +63,7 @@ class AdminLoginRequest(BaseModel):
 class AdminLoginResponse(BaseModel):
     user_id: int
     username: str
+    role: str
     name: Optional[str] = None
 
     model_config = {
@@ -77,3 +79,19 @@ class UserLoginRequest(BaseModel):
 class UserMessageResponse(BaseModel):
     detail: str
     data: UserResponse
+
+
+class UserGetAllRequest(BaseModel):
+    search: str = ""
+    page: int = 1
+    limit: int = 20
+    role: str = ""
+
+
+class UserGetAllResponse(BaseModel):
+    detail: str
+    page: int
+    limit: int
+    total_all: int
+    total_page: int
+    data: List[UserResponse]
