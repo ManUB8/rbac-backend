@@ -1,3 +1,5 @@
 venv/
 code/__pycache__/
+__pycache__/
+*.pyc
 code/.env

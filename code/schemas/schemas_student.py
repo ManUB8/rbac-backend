@@ -9,8 +9,24 @@ def validate_year_status(value):
     if value is None:
         return None
 
+    if isinstance(value, str) and value.strip() == "":
+        return None
+
     if value not in YEAR_STATUS_LIST:
         raise ValueError("year_status ต้องเป็น ปี 1, ปี 2, ปี 3, ปี 4 หรือ บัณฑิต")
+
+    return value
+
+
+def empty_or_zero_to_none(value):
+    if value is None:
+        return None
+
+    if isinstance(value, str) and value.strip() == "":
+        return None
+
+    if value == 0 or value == "0":
+        return None
 
     return value
     
@@ -44,7 +60,7 @@ class StudentRegisterRequest(BaseModel):
     position: Optional[StudentPositionBody] = None
     year_status: Optional[str] = None
 
-    @field_validator("year_status")
+    @field_validator("year_status", mode="before")
     @classmethod
     def validate_year_status_field(cls, value):
         return validate_year_status(value)
@@ -281,10 +297,20 @@ class StudentFilterRequest(BaseModel):
     year_status: Optional[str] = None
     position_id: Optional[int] = None
 
-    @field_validator("year_status")
+    @field_validator("faculty_id", "major_id", "position_id", mode="before")
+    @classmethod
+    def empty_filter_id_to_none(cls, value):
+        return empty_or_zero_to_none(value)
+
+    @field_validator("year_status", mode="before")
     @classmethod
     def validate_year_status_field(cls, value):
         return validate_year_status(value)
+
+
+class YearStatusSummaryResponse(BaseModel):
+    year_status: str
+    count_student: int
 
 
 class StudentFilterResponse(BaseModel):
@@ -293,6 +319,7 @@ class StudentFilterResponse(BaseModel):
     limit: int
     total_all: int
     total_page: int
+    year_status_summary: List[YearStatusSummaryResponse]
     data: List[StudentDetailWithUserResponse]
     
     

@@ -33,7 +33,7 @@ def admin_login(data: AdminLoginRequest, db: Session = Depends(get_db)):
             detail="รหัสผ่านไม่ถูกต้องสำหรับชื่อผู้ใช้"
         )
 
-    if user.role != "admin":
+    if user.role not in ["admin", "temporary_admin"]:
         raise HTTPException(
             status_code=403,
             detail="ผู้ใช้นี้ไม่มีสิทธิ์เข้าใช้งานแอดมิน"
@@ -48,5 +48,6 @@ def admin_login(data: AdminLoginRequest, db: Session = Depends(get_db)):
     return {
         "user_id": user.user_id,
         "username": user.username,
+        "role": user.role,
         "name": user.name,
     }

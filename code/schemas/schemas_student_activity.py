@@ -47,7 +47,12 @@ class StudentActivityViewItemResponse(BaseModel):
     attendance_status: str
     registered_at: Optional[int] = None
     checkin_at: Optional[int] = None
+    checkin_status: Optional[str] = None
+    checkin_status_text: Optional[str] = None
     checkout_at: Optional[int] = None
+    checkout_status: Optional[str] = None
+    checkout_status_text: Optional[str] = None
+    earned_hours: float = 0
 
     checkin_lat: Optional[float] = None
     checkin_lng: Optional[float] = None
@@ -188,7 +193,12 @@ class StudentActivityAllInOneActivityItem(BaseModel):
     attendance_status: str
     registered_at: Optional[int] = None
     checkin_at: Optional[int] = None
+    checkin_status: Optional[str] = None
+    checkin_status_text: Optional[str] = None
     checkout_at: Optional[int] = None
+    checkout_status: Optional[str] = None
+    checkout_status_text: Optional[str] = None
+    earned_hours: float = 0
 
 
 class StudentActivityAllInOneStudentItem(BaseModel):

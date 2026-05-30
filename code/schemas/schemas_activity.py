@@ -1,6 +1,7 @@
 from pydantic import BaseModel, field_validator, field_serializer
 from typing import Optional, List
 from datetime import date, time
+from decimal import Decimal
 from uuid import UUID
 
 def parse_time_dot(value):
@@ -38,10 +39,15 @@ class ActivityCreateRequest(BaseModel):
     start_time: time
     end_time: time
     hours: float
+    volunteer_hours: Decimal = Decimal("0")
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool = True
+    checkin_open_time: Optional[time] = None
+    checkin_close_time: Optional[time] = None
+    checkout_open_time: Optional[time] = None
+    checkout_close_time: Optional[time] = None
     created_by_name: str
     hour_type_id: UUID
 
@@ -53,7 +59,15 @@ class ActivityCreateRequest(BaseModel):
     activity_lng: Optional[float] = None
     activity_radius_meter: int = 100
 
-    @field_validator("start_time", "end_time", mode="before")
+    @field_validator(
+        "start_time",
+        "end_time",
+        "checkin_open_time",
+        "checkin_close_time",
+        "checkout_open_time",
+        "checkout_close_time",
+        mode="before"
+    )
     @classmethod
     def validate_time_format(cls, value):
         return parse_time_dot(value)
@@ -71,10 +85,15 @@ class ActivityUpdateRequest(BaseModel):
     start_time: Optional[time] = None
     end_time: Optional[time] = None
     hours: Optional[float] = None
+    volunteer_hours: Optional[Decimal] = None
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: Optional[bool] = None
+    checkin_open_time: Optional[time] = None
+    checkin_close_time: Optional[time] = None
+    checkout_open_time: Optional[time] = None
+    checkout_close_time: Optional[time] = None
     updated_by_name: str
     hour_type_id: Optional[UUID] = None
 
@@ -86,7 +105,15 @@ class ActivityUpdateRequest(BaseModel):
     activity_lng: Optional[float] = None
     activity_radius_meter: Optional[int] = None
 
-    @field_validator("start_time", "end_time", mode="before")
+    @field_validator(
+        "start_time",
+        "end_time",
+        "checkin_open_time",
+        "checkin_close_time",
+        "checkout_open_time",
+        "checkout_close_time",
+        mode="before"
+    )
     @classmethod
     def validate_time_format(cls, value):
         return parse_time_dot(value)
@@ -111,10 +138,15 @@ class ActivityResponse(BaseModel):
     start_time: time
     end_time: time
     hours: float
+    volunteer_hours: Decimal
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool
+    checkin_open_time: Optional[time] = None
+    checkin_close_time: Optional[time] = None
+    checkout_open_time: Optional[time] = None
+    checkout_close_time: Optional[time] = None
     hour_type_id: Optional[UUID] = None
     hour_type: Optional[HourTypeResponse] = None
 
@@ -133,8 +165,17 @@ class ActivityResponse(BaseModel):
     created_at: Optional[int] = None
     updated_at: Optional[int] = None
 
-    @field_serializer("start_time", "end_time")
-    def serialize_time(self, value: time):
+    @field_serializer(
+        "start_time",
+        "end_time",
+        "checkin_open_time",
+        "checkin_close_time",
+        "checkout_open_time",
+        "checkout_close_time"
+    )
+    def serialize_time(self, value: Optional[time]):
+        if value is None:
+            return None
         return value.strftime("%H.%M")
 
     model_config = {
@@ -179,7 +220,7 @@ class AdminActivityFilterInfo(BaseModel):
 class ActivityAdminSearchRequest(BaseModel):
     search: str = ""
     page: int = 1
-    limit: int = 10
+    limit: int = 20
     hour_type_id: str = ""
     activity_status: str = ""
     check_type: str = ""

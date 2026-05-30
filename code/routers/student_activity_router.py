@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from math import radians, sin, cos, sqrt, atan2
+from datetime import datetime
 import time as time_module
 from sqlalchemy import and_, or_, func
 
@@ -38,6 +39,26 @@ def get_admin_by_name(db: Session, admin_name: str) -> User:
         .filter(
             User.name == admin_name,
             User.role == "admin",
+            User.is_active == True
+        )
+        .first()
+    )
+
+    if not admin:
+        raise HTTPException(
+            status_code=403,
+            detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมินหรือไม่พบในระบบ: {admin_name}"
+        )
+
+    return admin
+
+
+def get_scan_admin_by_name(db: Session, admin_name: str) -> User:
+    admin = (
+        db.query(User)
+        .filter(
+            User.name == admin_name,
+            User.role.in_(["admin", "temporary_admin"]),
             User.is_active == True
         )
         .first()
@@ -119,6 +140,42 @@ def validate_activity_location(activity: Activity, lat: float, lng: float):
         )
 
 
+def is_time_in_window(open_time, close_time, current_time) -> bool:
+    if open_time is None or close_time is None:
+        return False
+
+    return open_time <= current_time <= close_time
+
+
+def calculate_earned_hours(activity, item):
+    volunteer_hours = float(activity.volunteer_hours or 0)
+
+    if activity.check_type == "checkin_only":
+        return volunteer_hours if item.checkin_status == "valid" else 0
+
+    if activity.check_type == "checkin_checkout":
+        valid_count = 0
+
+        if item.checkin_status == "valid":
+            valid_count += 1
+
+        if item.checkout_status == "valid":
+            valid_count += 1
+
+        if valid_count == 2:
+            return volunteer_hours
+
+        if valid_count == 1:
+            return volunteer_hours / 2
+
+        return 0
+
+    if activity.check_type == "checkout_only":
+        return volunteer_hours if item.checkout_status == "valid" else 0
+
+    return 0
+
+
 def get_student_by_code(db: Session, student_code: str) -> Student:
     student = db.query(Student).filter(Student.student_code == student_code).first()
 
@@ -138,6 +195,16 @@ def get_activity_by_id(db: Session, activity_id: int) -> Activity:
         raise HTTPException(status_code=400, detail="กิจกรรมนี้ปิดใช้งานแล้ว")
 
     return activity
+
+
+def get_scan_status_text(status, valid_text: str, manual_text: str):
+    if status == "valid":
+        return valid_text
+
+    if status == "manual":
+        return manual_text
+
+    return None
 
 
 def build_student_activity_response(item: StudentActivity, student: Student, activity: Activity):
@@ -166,7 +233,12 @@ def build_student_activity_response(item: StudentActivity, student: Student, act
         "attendance_status": item.attendance_status,
         "registered_at": item.registered_at,
         "checkin_at": item.checkin_at,
+        "checkin_status": item.checkin_status,
+        "checkin_status_text": get_scan_status_text(item.checkin_status, "ตรงเวลา", "มาสาย"),
         "checkout_at": item.checkout_at,
+        "checkout_status": item.checkout_status,
+        "checkout_status_text": get_scan_status_text(item.checkout_status, "ตรงเวลา", "เช็คเอาท์นอกเวลา"),
+        "earned_hours": float(item.earned_hours or 0),
 
         "checkin_lat": float(item.checkin_lat) if item.checkin_lat is not None else None,
         "checkin_lng": float(item.checkin_lng) if item.checkin_lng is not None else None,
@@ -257,11 +329,24 @@ def checkin_activity(
     body: StudentActivityCheckinRequest,
     db: Session = Depends(get_db)
 ):
-    admin = get_admin_by_name(db, body.created_by_name)
+    admin = get_scan_admin_by_name(db, body.created_by_name)
     student = get_student_by_code(db, body.student_code)
     activity = get_activity_by_id(db, body.activity_id)
 
+    if activity.check_type == "checkout_only":
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ไม่รองรับการเช็คอิน")
+
     validate_activity_location(activity, body.checkin_lat, body.checkin_lng)
+
+    current_time = datetime.now().time()
+    is_valid_checkin_time = is_time_in_window(
+        activity.checkin_open_time,
+        activity.checkin_close_time,
+        current_time
+    )
+
+    if admin.role == "temporary_admin" and not is_valid_checkin_time:
+        raise HTTPException(status_code=403, detail="หมดเวลาลงทะเบียนเช็คอินแล้ว")
 
     item = (
         db.query(StudentActivity)
@@ -293,6 +378,8 @@ def checkin_activity(
 
     item.attendance_status = "เข้าร่วม"
     item.checkin_at = now
+    item.checkin_status = "valid" if is_valid_checkin_time else "manual"
+    item.earned_hours = calculate_earned_hours(activity, item)
     item.checkin_lat = body.checkin_lat
     item.checkin_lng = body.checkin_lng
     item.updated_by_id = admin.user_id
@@ -313,14 +400,24 @@ def checkout_activity(
     body: StudentActivityCheckoutRequest,
     db: Session = Depends(get_db)
 ):
-    admin = get_admin_by_name(db, body.updated_by_name)
+    admin = get_scan_admin_by_name(db, body.updated_by_name)
     student = get_student_by_code(db, body.student_code)
     activity = get_activity_by_id(db, body.activity_id)
 
-    if activity.check_type != "checkin_checkout":
-        raise HTTPException(status_code=400, detail="กิจกรรมนี้เป็นแบบเช็คอินอย่างเดียว ไม่ต้องเช็คเอาท์")
+    if activity.check_type not in ["checkout_only", "checkin_checkout"]:
+        raise HTTPException(status_code=400, detail="กิจกรรมนี้ไม่รองรับการเช็คเอาท์")
 
     validate_activity_location(activity, body.checkout_lat, body.checkout_lng)
+
+    current_time = datetime.now().time()
+    is_valid_checkout_time = is_time_in_window(
+        activity.checkout_open_time,
+        activity.checkout_close_time,
+        current_time
+    )
+
+    if admin.role == "temporary_admin" and not is_valid_checkout_time:
+        raise HTTPException(status_code=403, detail="หมดเวลาลงทะเบียนเช็คเอาท์แล้ว")
 
     item = (
         db.query(StudentActivity)
@@ -335,10 +432,22 @@ def checkout_activity(
     if activity.require_registration and not item:
         raise HTTPException(status_code=400, detail="กิจกรรมนี้ต้องลงทะเบียนก่อนเช็คเอาท์")
 
-    if not item:
+    if not item and activity.check_type == "checkin_checkout":
         raise HTTPException(status_code=400, detail="ต้องเช็คอินก่อน จึงจะเช็คเอาท์ได้")
 
-    if item.checkin_at is None:
+    if not item and activity.check_type == "checkout_only":
+        now = get_unix_time()
+        item = StudentActivity(
+            student_id=student.student_id,
+            activity_id=activity.activity_id,
+            registered_at=None,
+            created_by_id=admin.user_id,
+            created_by_name=admin.name,
+            created_at=now,
+        )
+        db.add(item)
+
+    if activity.check_type == "checkin_checkout" and item.checkin_at is None:
         raise HTTPException(status_code=400, detail="ต้องเช็คอินก่อน จึงจะเช็คเอาท์ได้")
 
     if item.checkout_at is not None:
@@ -346,7 +455,10 @@ def checkout_activity(
 
     now = get_unix_time()
 
+    item.attendance_status = "เข้าร่วม"
     item.checkout_at = now
+    item.checkout_status = "valid" if is_valid_checkout_time else "manual"
+    item.earned_hours = calculate_earned_hours(activity, item)
     item.checkout_lat = body.checkout_lat
     item.checkout_lng = body.checkout_lng
     item.updated_by_id = admin.user_id
@@ -843,7 +955,12 @@ def get_student_activity_all_in_one(
             "attendance_status": item.attendance_status,
             "registered_at": item.registered_at,
             "checkin_at": item.checkin_at,
+            "checkin_status": item.checkin_status,
+            "checkin_status_text": get_scan_status_text(item.checkin_status, "ตรงเวลา", "มาสาย"),
             "checkout_at": item.checkout_at,
+            "checkout_status": item.checkout_status,
+            "checkout_status_text": get_scan_status_text(item.checkout_status, "ตรงเวลา", "เช็คเอาท์นอกเวลา"),
+            "earned_hours": float(item.earned_hours or 0),
         })
 
         student_map[student.student_id]["total_activity"] += 1
@@ -946,7 +1063,7 @@ def get_student_activity_all_in_one(
                 "student_id": student.student_id,
                 "student_code": student.student_code,
                 "prefix": student.prefix,
-                "full_name": f"{student.prefix or ''}{student.first_name} {student.last_name}",
+                "full_name": f"{student.first_name} {student.last_name}",
                 "first_name": student.first_name,
                 "last_name": student.last_name,
 
@@ -990,7 +1107,12 @@ def get_student_activity_all_in_one(
                 "attendance_status": student_activity.attendance_status,
                 "registered_at": student_activity.registered_at,
                 "checkin_at": student_activity.checkin_at,
+                "checkin_status": student_activity.checkin_status,
+                "checkin_status_text": get_scan_status_text(student_activity.checkin_status, "ตรงเวลา", "มาสาย"),
                 "checkout_at": student_activity.checkout_at,
+                "checkout_status": student_activity.checkout_status,
+                "checkout_status_text": get_scan_status_text(student_activity.checkout_status, "ตรงเวลา", "เช็คเอาท์นอกเวลา"),
+                "earned_hours": float(student_activity.earned_hours or 0),
             })
 
             student_map[student.student_id]["total_activity"] += 1

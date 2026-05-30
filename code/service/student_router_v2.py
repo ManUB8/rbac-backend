@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 import time as time_module
 from fastapi import Query
 from typing import Optional
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from database import SessionLocal
 from models import Student, User, Faculty, Major, Position, StudentPosition, StudentActivity
 from schemas.schemas_student import (
@@ -21,7 +21,8 @@ from schemas.schemas_student import (
     StudentDetailWithUserResponse,
     StudentFilterRequest,
     StudentFilterResponse,
-    AdminDeleteRequest
+    AdminDeleteRequest,
+    YEAR_STATUS_LIST,
 )
 
 router = APIRouter(prefix="/student/v2", tags=["Student V2"])
@@ -784,6 +785,23 @@ def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
         "student": [build_student_response(student) for student in students]
     }
     
+
+def get_year_status_summary(db: Session):
+    counts = dict(
+        db.query(Student.year_status, func.count(Student.student_id))
+        .group_by(Student.year_status)
+        .all()
+    )
+
+    return [
+        {
+            "year_status": year_status,
+            "count_student": counts.get(year_status, 0),
+        }
+        for year_status in YEAR_STATUS_LIST
+    ]
+
+
 @router.post("/get-all/filter", response_model=StudentFilterResponse)
 def get_all_students_filter(
     body: StudentFilterRequest,
@@ -850,6 +868,7 @@ def get_all_students_filter(
         "limit": limit,
         "total_all": total_all,
         "total_page": total_page,
+        "year_status_summary": get_year_status_summary(db),
         "data": [build_student_response(student) for student in students],
     }
     
@@ -924,6 +943,7 @@ def get_all_students_filter(
         "limit": limit,
         "total_all": total_all,
         "total_page": total_page,
+        "year_status_summary": get_year_status_summary(db),
         "data": [build_student_response(student) for student in students],
     }
     
