@@ -24,6 +24,17 @@ def get_db():
 YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"]
 
 
+
+def get_scan_status_text(status, valid_text: str, manual_text: str):
+    if status == "valid":
+        return valid_text
+
+    if status == "manual":
+        return manual_text
+
+    return None
+
+
 def calc_percent(part: int, total: int) -> float:
     if total <= 0:
         return 0.0
@@ -558,13 +569,29 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
         }
     }
 
+# =========================
+# API
+# =========================
 
-@router.get("/student/{student_id}", response_model=StudentDashboardMessageResponse)
-def get_student_dashboard(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.student_id == student_id).first()
+@router.get(
+    "/student/{student_id}",
+    response_model=StudentDashboardMessageResponse
+)
+def get_student_dashboard(
+    student_id: int,
+    db: Session = Depends(get_db)
+):
+    student = (
+        db.query(Student)
+        .filter(Student.student_id == student_id)
+        .first()
+    )
 
     if not student:
-        raise HTTPException(status_code=404, detail="ไม่พบนักศึกษา")
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบนักศึกษา"
+        )
 
     rows = (
         db.query(Activity, StudentActivity)
@@ -580,24 +607,68 @@ def get_student_dashboard(student_id: int, db: Session = Depends(get_db)):
 
     joined_count = 0
     not_joined_count = 0
+
     checkin_count = 0
     checkout_count = 0
-    total_hours = 0.0
+
+    # เวลากิจกรรมรวม
+    total_activity_hours = 0.0
+
+    # ชั่วโมงจิตอาสารวม
+    total_volunteer_hours = 0.0
+
+    # ชั่วโมงจิตอาสาที่ได้จริงรวม
+    total_earned_hours = 0.0
+
     activities = []
 
     for activity, student_activity in rows:
+
         attendance_status = (
             student_activity.attendance_status
-            if student_activity
+            if student_activity and student_activity.attendance_status
             else "ไม่เข้าร่วม"
         )
 
-        checkin_at = student_activity.checkin_at if student_activity else None
-        checkout_at = student_activity.checkout_at if student_activity else None
+        checkin_at = (
+            student_activity.checkin_at
+            if student_activity
+            else None
+        )
+
+        checkout_at = (
+            student_activity.checkout_at
+            if student_activity
+            else None
+        )
+
+        # ชั่วโมงจิตอาสาที่ได้จริง
+        earned_hours = (
+            float(student_activity.earned_hours or 0)
+            if student_activity
+            else 0.0
+        )
+
+        # ชั่วโมงจิตอาสาของกิจกรรม
+        volunteer_hours = float(
+            activity.volunteer_hours or 0
+        )
+
+        # เวลากิจกรรมจริง
+        activity_hours = float(
+            activity.hours or 0
+        )
 
         if attendance_status == "เข้าร่วม":
+
             joined_count += 1
-            total_hours += float(activity.hours or 0)
+
+            total_activity_hours += activity_hours
+
+            total_volunteer_hours += volunteer_hours
+
+            total_earned_hours += earned_hours
+
         else:
             not_joined_count += 1
 
@@ -607,18 +678,120 @@ def get_student_dashboard(student_id: int, db: Session = Depends(get_db)):
         if checkout_at is not None:
             checkout_count += 1
 
+        check_detail = None
+
+        if student_activity:
+            check_detail = {
+                "attendance_status": attendance_status,
+
+                "registered_at": student_activity.registered_at,
+
+                # ชั่วโมงจิตอาสาที่ได้จริง
+                "earned_hours": earned_hours,
+
+                # ชั่วโมงจิตอาสาของกิจกรรม
+                "volunteer_hours": volunteer_hours,
+
+                # เวลากิจกรรมจริง
+                "activity_hours": activity_hours,
+
+                "checkout": {
+                    "checkout_at": student_activity.checkout_at,
+
+                    "checkout_status": (
+                        student_activity.checkout_status
+                    ),
+
+                    "checkout_status_text": (
+                        get_scan_status_text(
+                            student_activity.checkout_status,
+                            "ตรงเวลา",
+                            "เช็คเอาท์นอกเวลา"
+                        )
+                    ),
+
+                    "checkout_lat": (
+                        float(student_activity.checkout_lat)
+                        if student_activity.checkout_lat is not None
+                        else None
+                    ),
+
+                    "checkout_lng": (
+                        float(student_activity.checkout_lng)
+                        if student_activity.checkout_lng is not None
+                        else None
+                    ),
+                },
+
+                "checkin": {
+                    "checkin_at": student_activity.checkin_at,
+
+                    "checkin_status": (
+                        student_activity.checkin_status
+                    ),
+
+                    "checkin_status_text": (
+                        get_scan_status_text(
+                            student_activity.checkin_status,
+                            "ตรงเวลา",
+                            "มาสาย"
+                        )
+                    ),
+
+                    "checkin_lat": (
+                        float(student_activity.checkin_lat)
+                        if student_activity.checkin_lat is not None
+                        else None
+                    ),
+
+                    "checkin_lng": (
+                        float(student_activity.checkin_lng)
+                        if student_activity.checkin_lng is not None
+                        else None
+                    ),
+                },
+            }
+
         activities.append({
             "activity_id": activity.activity_id,
+
             "activity_name": activity.activity_name,
-            "activity_date": activity.activity_date.isoformat(),
-            "start_time": format_time_dot(activity.start_time),
-            "end_time": format_time_dot(activity.end_time),
-            "hours": float(activity.hours or 0),
+
+            "activity_date": (
+                activity.activity_date.isoformat()
+                if activity.activity_date
+                else None
+            ),
+
+            "start_time": format_time_dot(
+                activity.start_time
+            ),
+
+            "end_time": format_time_dot(
+                activity.end_time
+            ),
+
+            # เวลากิจกรรมจริง
+            "hours": activity_hours,
+
+            # ชั่วโมงจิตอาสาของกิจกรรม
+            "volunteer_hours": volunteer_hours,
+
+            # ชั่วโมงจิตอาสาที่ได้จริง
+            "earned_hours": earned_hours,
+
             "location": activity.location,
+
             "description": activity.description,
+
             "activity_img": activity.activity_img,
+
             "activity_status": activity.activity_status,
+
             "attendance_status": attendance_status,
+
+            "check_detail": check_detail,
+
             "checkin_at": checkin_at,
             "checkout_at": checkout_at,
         })
@@ -627,15 +800,37 @@ def get_student_dashboard(student_id: int, db: Session = Depends(get_db)):
 
     return {
         "detail": "success",
+
         "data": {
             "joined_count": joined_count,
+
             "not_joined_count": not_joined_count,
+
             "checkin_count": checkin_count,
+
             "checkout_count": checkout_count,
-            "total_hours": total_hours,
+
+            # เวลากิจกรรมรวม
+            "total_activity_hours": total_activity_hours,
+
+            # ชั่วโมงจิตอาสารวม
+            "total_volunteer_hours": total_volunteer_hours,
+
+            # ชั่วโมงจิตอาสาที่ได้จริงรวม
+            "total_earned_hours": total_earned_hours,
+
             "total_activity_count": total_activity_count,
-            "join_rate_percent": calc_percent(joined_count, total_activity_count),
-            "checkout_rate_percent": calc_percent(checkout_count, checkin_count),
+
+            "join_rate_percent": calc_percent(
+                joined_count,
+                total_activity_count
+            ),
+
+            "checkout_rate_percent": calc_percent(
+                checkout_count,
+                checkin_count
+            ),
+
             "activities": activities,
         }
     }
