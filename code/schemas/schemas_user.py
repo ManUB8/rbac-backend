@@ -1,6 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Literal
-
+from typing import List, Optional, Literal,Dict
 
 class UserDeleteRequest(BaseModel):
     deleted_by_name: str
@@ -93,5 +92,7 @@ class UserGetAllResponse(BaseModel):
     page: int
     limit: int
     total_all: int
+    total_user_all: int
+    total_role: Dict[str, int]
     total_page: int
     data: List[UserResponse]
