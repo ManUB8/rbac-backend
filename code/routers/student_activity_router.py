@@ -4,7 +4,8 @@ from math import radians, sin, cos, sqrt, atan2
 from datetime import datetime
 import time as time_module
 from sqlalchemy import and_, or_, func
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from database import get_db
 from models import Student, Activity, StudentActivity, User, StudentPosition , Position
 from schemas.schemas_student_activity import (
@@ -27,6 +28,9 @@ from schemas.schemas_student_activity import (
 
 router = APIRouter(prefix="/student_activities/v1", tags=["Student Activities"])
 DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
+
+
+
 
 
 def get_unix_time() -> int:
@@ -338,7 +342,8 @@ def checkin_activity(
 
     validate_activity_location(activity, body.checkin_lat, body.checkin_lng)
 
-    current_time = datetime.now().time()
+    # current_time = datetime.now().time()
+    current_time = datetime.now(ZoneInfo("Asia/Bangkok")).time()
     is_valid_checkin_time = is_time_in_window(
         activity.checkin_open_time,
         activity.checkin_close_time,
@@ -409,7 +414,8 @@ def checkout_activity(
 
     validate_activity_location(activity, body.checkout_lat, body.checkout_lng)
 
-    current_time = datetime.now().time()
+    # current_time = datetime.now().time()
+    current_time = datetime.now(ZoneInfo("Asia/Bangkok")).time()
     is_valid_checkout_time = is_time_in_window(
         activity.checkout_open_time,
         activity.checkout_close_time,

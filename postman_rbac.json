@@ -1739,7 +1739,7 @@
           "response": []
         },
         {
-          "name": "DELETE /student_activities/v1/admin/delete-all-student-activities",
+          "name": "ห้ามยุ่ง-เคลียร์ข้อมูลนิสิตเข้ากิจกรรมทั้งหมด DELETE /student_activities/v1/admin/delete-all-student-activities",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1762,7 +1762,7 @@
           "response": []
         },
         {
-          "name": "DELETE /student_activities/v1/admin/delete-all-activities",
+          "name": "ห้ามยุ่ง-ลบกิจกรรมทั้งหมด + เคลียร์ข้อมูลเข้าร่วมทั้งหมดDELETE /student_activities/v1/admin/delete-all-activities",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2564,7 +2564,7 @@
           "response": []
         },
         {
-          "name": "DELETE /student/v2/admin/delete-all-students",
+          "name": " ห้ามยุ่งลบนิสิต DELETE /student/v2/admin/delete-all-students",
           "request": {
             "method": "DELETE",
             "header": [
