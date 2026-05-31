@@ -76,6 +76,7 @@ def create_user(data: UserCreateRequest, db: Session = Depends(get_db)):
 @router.get("/all-users", response_model=list[UserResponse])
 def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
+from sqlalchemy import func
 
 @router.post("/get-all", response_model=UserGetAllResponse)
 def get_all_users_filter(
@@ -86,16 +87,21 @@ def get_all_users_filter(
     limit = max(data.limit, 1)
     offset = (page - 1) * limit
 
+    allowed_roles = ["admin", "temporary_admin"]
+
     # -----------------------------
     # total role ทั้งหมดของระบบ
-    # ไม่เกี่ยวกับ filter
+    # เฉพาะ admin / temporary_admin
     # -----------------------------
     role_rows = (
         db.query(
             User.role,
             func.count(User.user_id)
         )
-        .filter(User.is_active == True)
+        .filter(
+            User.is_active == True,
+            User.role.in_(allowed_roles)
+        )
         .group_by(User.role)
         .all()
     )
@@ -110,9 +116,13 @@ def get_all_users_filter(
     # -----------------------------
     # query filter สำหรับ data
     # -----------------------------
-    query = db.query(User)
-
-    query = query.filter(User.is_active == True)
+    query = (
+        db.query(User)
+        .filter(
+            User.is_active == True,
+            User.role.in_(allowed_roles)
+        )
+    )
 
     if data.search:
         search_text = f"%{data.search}%"
@@ -143,17 +153,16 @@ def get_all_users_filter(
 
     return {
         "detail": "ดึงข้อมูลผู้ใช้งานสำเร็จ",
-
         "page": page,
         "limit": limit,
         "total_all": total_all,
         "total_page": total_page,
-        # total ทั้งระบบ
+        # total เฉพาะ admin / temporary_admin
         "total_user_all": total_user_all,
         "total_role": total_role,
         "data": users,
     }
-
+    
 @router.get("/get-one/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == user_id).first()
