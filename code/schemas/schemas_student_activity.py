@@ -253,7 +253,6 @@ class StudentActivityAvailableItemResponse(BaseModel):
     # ชั่วโมงจิตอาสาของกิจกรรม
     volunteer_hours: float = 0
 
-    check_detail: Optional[CheckDettail] = None
 
     # checkin time
     checkin_open_time: Optional[time] = None
