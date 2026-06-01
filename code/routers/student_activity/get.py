@@ -131,7 +131,10 @@ def get_available_activities_for_student(
             "require_registration": activity.require_registration,
             "max_participants": activity.max_participants,
 
-            
+            # เพิ่มตรงนี้
+            "hours": activity.hours or 0,
+            "volunteer_hours": activity.volunteer_hours or 0,
+
             "checkin_open_time": activity.checkin_open_time,
             "checkin_close_time": activity.checkin_close_time,
             "checkout_open_time": activity.checkout_open_time,
