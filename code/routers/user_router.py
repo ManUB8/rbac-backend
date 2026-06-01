@@ -98,10 +98,7 @@ def get_all_users_filter(
             User.role,
             func.count(User.user_id)
         )
-        .filter(
-            User.is_active == True,
-            User.role.in_(allowed_roles)
-        )
+        .filter( User.role.in_(allowed_roles))
         .group_by(User.role)
         .all()
     )
@@ -118,10 +115,7 @@ def get_all_users_filter(
     # -----------------------------
     query = (
         db.query(User)
-        .filter(
-            User.is_active == True,
-            User.role.in_(allowed_roles)
-        )
+        .filter(User.role.in_(allowed_roles))
     )
 
     if data.search:
@@ -208,11 +202,17 @@ def update_user(user_id: int, data: UserUpdateRequest, db: Session = Depends(get
 
     return user
 
-
 @router.delete("/delete/{user_id}", response_model=UserDeleteResponse)
-def delete_user(user_id: int, data: UserDeleteRequest, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    data: UserDeleteRequest,
+    db: Session = Depends(get_db)
+):
     if user_id != data.deleted_user_id:
-        raise HTTPException(status_code=500, detail="user_id ใน URL และ body ไม่ตรงกัน")
+        raise HTTPException(
+            status_code=500,
+            detail="user_id ใน URL และ body ไม่ตรงกัน"
+        )
 
     admin = (
         db.query(User)
@@ -225,24 +225,38 @@ def delete_user(user_id: int, data: UserDeleteRequest, db: Session = Depends(get
     )
 
     if not admin:
-        raise HTTPException(status_code=403, detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมิน: {data.deleted_by_name}")
+        raise HTTPException(
+            status_code=403,
+            detail=f"ผู้ใช้นี้ไม่มีสิทธิ์แอดมิน: {data.deleted_by_name}"
+        )
 
-    user = db.query(User).filter(User.user_id == user_id).first()
+    user = (
+        db.query(User)
+        .filter(User.user_id == user_id)
+        .first()
+    )
+
     if not user:
-        raise HTTPException(status_code=500, detail="User not found")
+        raise HTTPException(
+            status_code=500,
+            detail="User not found"
+        )
 
     if user.user_id == admin.user_id:
-        raise HTTPException(status_code=500, detail="ไม่สามารถลบบัญชีของตัวเองได้")
+        raise HTTPException(
+            status_code=500,
+            detail="ไม่สามารถลบบัญชีของตัวเองได้"
+        )
 
-    user.is_active = False
-    user.updated_by_id = admin.user_id
-    user.updated_by_name = admin.name
-    user.updated_at = get_unix_time()
+    deleted_user_name = user.name
+
+    # ลบจริง
+    db.delete(user)
 
     db.commit()
 
     return {
-        "detail": "ปิดการใช้งานผู้ใช้สำเร็จ",
+        "detail": "ลบผู้ใช้สำเร็จ",
         "deleted_by": admin.name,
-        "deleted_user": user.name,
+        "deleted_user": deleted_user_name,
     }

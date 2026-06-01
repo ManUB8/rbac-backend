@@ -315,6 +315,9 @@ class StudentActivityAllInOneActivityItem(BaseModel):
 
     location: Optional[str] = None
     activity_img: Optional[str] = None
+    description: Optional[str] = None
+    start_time: str
+    end_time: str
 
     # เวลากิจกรรมจริง
     hours: Optional[float] = None

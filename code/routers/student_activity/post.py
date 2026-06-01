@@ -537,6 +537,7 @@ def get_student_activity_all_in_one(
                     activity.hours
                 ),
                 "location": activity.location,
+                "description": activity.description,
                 "activity_img": activity.activity_img,
                 # เวลาเริ่มกิจกรรม
                 "start_time": format_time_dot(activity.start_time),

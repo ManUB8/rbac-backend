@@ -20,9 +20,7 @@ def get_db():
         db.close()
 
 
-# YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4", "บัณฑิต"]
 YEAR_STATUS_LIST = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"]
-
 
 
 def get_scan_status_text(status, valid_text: str, manual_text: str):
@@ -191,18 +189,23 @@ def build_activity_summary(db: Session, activity: Activity):
     return {
         "activity_id": activity.activity_id,
         "activity_name": activity.activity_name,
-        "activity_date": activity.activity_date.isoformat(),
+        "activity_date": activity.activity_date.isoformat() if activity.activity_date else "",
         "start_time": format_time_dot(activity.start_time),
         "end_time": format_time_dot(activity.end_time),
+
         "hours": float(activity.hours or 0),
+        "volunteer_hours": float(activity.volunteer_hours or 0),
+
         "location": activity.location,
         "check_type": activity.check_type,
-        "require_registration": activity.require_registration,
+        "require_registration": bool(activity.require_registration),
+
         "joined_count": joined_count,
         "not_joined_count": not_joined_count,
         "checkin_count": checkin_count,
         "checkout_count": checkout_count,
         "total_count": total_count,
+
         "join_rate_percent": calc_percent(joined_count, total_count),
         "checkout_rate_percent": calc_percent(checkout_count, checkin_count),
     }
@@ -326,6 +329,15 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
         else activity.hours
     )
 
+    volunteer_hours_count_all = (
+        db.query(func.sum(Activity.volunteer_hours))
+        .filter(Activity.activity_status == True)
+        .scalar()
+        or 0
+        if is_all_activity
+        else activity.volunteer_hours
+    )
+
     activity_count = (
         db.query(func.count(Activity.activity_id))
         .filter(Activity.activity_status == True)
@@ -364,15 +376,8 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
 
     total_join_status = joined_count + not_joined_count
 
-    join_rate_percent = calc_percent(
-        joined_count,
-        total_join_status
-    )
-
-    checkout_rate_percent = calc_percent(
-        checkout_count,
-        checkin_count
-    )
+    join_rate_percent = calc_percent(joined_count, total_join_status)
+    checkout_rate_percent = calc_percent(checkout_count, checkin_count)
 
     top_activity = None
     selected_activity = None
@@ -463,10 +468,6 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     faculty_rank = []
     major_rank = []
 
-    faculty_result = []
-    faculty_rank = []
-    major_rank = []
-
     for faculty in faculties:
         faculty_rank_item = build_faculty_rank_item(
             db=db,
@@ -493,10 +494,8 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
                 activity_id=activity_id
             )
 
-            # major_rank เอาไว้ดูละเอียด มี checkin checkout percent
             major_rank.append(major_rank_item)
 
-            # faculty.major เอาไว้แสดงแบบง่าย
             major_result.append({
                 "major_id": major.major_id,
                 "major_name": major.major_name,
@@ -505,14 +504,12 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
                 "not_joined_count": major_rank_item["not_joined_count"],
             })
 
-        # เรียงสาขาในคณะ จากเข้าร่วมมาก -> น้อย
         major_result = sorted(
             major_result,
             key=lambda x: x["joined_count"],
             reverse=True
         )
 
-        # faculty เอาไว้แสดงแบบง่าย ไม่มี checkin checkout
         faculty_result.append({
             "faculty_id": faculty.faculty_id,
             "faculty_name": faculty.faculty_name,
@@ -522,30 +519,27 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
             "major": major_result,
         })
 
-    # faculty เรียงจากเข้าร่วมมาก -> น้อย
     faculty_result = sorted(
         faculty_result,
         key=lambda x: x["joined_count"],
         reverse=True
     )
 
-    # faculty_rank เรียงทั้งหมด ไม่ตัด top 10
     faculty_rank = sorted(
         faculty_rank,
         key=lambda x: x["joined_count"],
         reverse=True
     )
 
-    # major_rank เรียงทั้งหมด ไม่ตัด top 10
     major_rank = sorted(
         major_rank,
         key=lambda x: x["joined_count"],
         reverse=True
     )
+
     return {
         "detail": "success",
         "data": {
-            "hours_count_all": float(hours_count_all or 0),
             "activity_count": activity_count,
 
             "joined_count": joined_count,
@@ -554,6 +548,10 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
             "checkout_count": checkout_count,
 
             "student_count_all": student_count_all,
+
+            "hours_count_all": float(hours_count_all or 0),
+            "volunteer_hours_count_all": float(volunteer_hours_count_all or 0),
+
             "join_rate_percent": join_rate_percent,
             "checkout_rate_percent": checkout_rate_percent,
 
@@ -569,9 +567,6 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
         }
     }
 
-# =========================
-# API
-# =========================
 
 @router.get(
     "/student/{student_id}",
@@ -597,8 +592,8 @@ def get_student_dashboard(
         db.query(Activity, StudentActivity)
         .outerjoin(
             StudentActivity,
-            (StudentActivity.activity_id == Activity.activity_id) &
-            (StudentActivity.student_id == student_id)
+            (StudentActivity.activity_id == Activity.activity_id)
+            & (StudentActivity.student_id == student_id)
         )
         .filter(Activity.activity_status == True)
         .order_by(Activity.activity_date.desc())
@@ -607,23 +602,16 @@ def get_student_dashboard(
 
     joined_count = 0
     not_joined_count = 0
-
     checkin_count = 0
     checkout_count = 0
 
-    # เวลากิจกรรมรวม
     total_activity_hours = 0.0
-
-    # ชั่วโมงจิตอาสารวม
     total_volunteer_hours = 0.0
-
-    # ชั่วโมงจิตอาสาที่ได้จริงรวม
     total_earned_hours = 0.0
 
     activities = []
 
     for activity, student_activity in rows:
-
         attendance_status = (
             student_activity.attendance_status
             if student_activity and student_activity.attendance_status
@@ -642,33 +630,20 @@ def get_student_dashboard(
             else None
         )
 
-        # ชั่วโมงจิตอาสาที่ได้จริง
         earned_hours = (
             float(student_activity.earned_hours or 0)
             if student_activity
             else 0.0
         )
 
-        # ชั่วโมงจิตอาสาของกิจกรรม
-        volunteer_hours = float(
-            activity.volunteer_hours or 0
-        )
-
-        # เวลากิจกรรมจริง
-        activity_hours = float(
-            activity.hours or 0
-        )
+        volunteer_hours = float(activity.volunteer_hours or 0)
+        activity_hours = float(activity.hours or 0)
 
         if attendance_status == "เข้าร่วม":
-
             joined_count += 1
-
             total_activity_hours += activity_hours
-
             total_volunteer_hours += volunteer_hours
-
             total_earned_hours += earned_hours
-
         else:
             not_joined_count += 1
 
@@ -683,70 +658,48 @@ def get_student_dashboard(
         if student_activity:
             check_detail = {
                 "attendance_status": attendance_status,
-
                 "registered_at": student_activity.registered_at,
 
-                # ชั่วโมงจิตอาสาที่ได้จริง
                 "earned_hours": earned_hours,
-
-                # ชั่วโมงจิตอาสาของกิจกรรม
                 "volunteer_hours": volunteer_hours,
-
-                # เวลากิจกรรมจริง
                 "activity_hours": activity_hours,
-
-                "checkout": {
-                    "checkout_at": student_activity.checkout_at,
-
-                    "checkout_status": (
-                        student_activity.checkout_status
-                    ),
-
-                    "checkout_status_text": (
-                        get_scan_status_text(
-                            student_activity.checkout_status,
-                            "ตรงเวลา",
-                            "เช็คเอาท์นอกเวลา"
-                        )
-                    ),
-
-                    "checkout_lat": (
-                        float(student_activity.checkout_lat)
-                        if student_activity.checkout_lat is not None
-                        else None
-                    ),
-
-                    "checkout_lng": (
-                        float(student_activity.checkout_lng)
-                        if student_activity.checkout_lng is not None
-                        else None
-                    ),
-                },
 
                 "checkin": {
                     "checkin_at": student_activity.checkin_at,
-
-                    "checkin_status": (
-                        student_activity.checkin_status
+                    "checkin_status": student_activity.checkin_status,
+                    "checkin_status_text": get_scan_status_text(
+                        student_activity.checkin_status,
+                        "ตรงเวลา",
+                        "มาสาย"
                     ),
-
-                    "checkin_status_text": (
-                        get_scan_status_text(
-                            student_activity.checkin_status,
-                            "ตรงเวลา",
-                            "มาสาย"
-                        )
-                    ),
-
                     "checkin_lat": (
                         float(student_activity.checkin_lat)
                         if student_activity.checkin_lat is not None
                         else None
                     ),
-
                     "checkin_lng": (
                         float(student_activity.checkin_lng)
                         if student_activity.checkin_lng is not None
+                        else None
+                    ),
+                },
+
+                "checkout": {
+                    "checkout_at": student_activity.checkout_at,
+                    "checkout_status": student_activity.checkout_status,
+                    "checkout_status_text": get_scan_status_text(
+                        student_activity.checkout_status,
+                        "ตรงเวลา",
+                        "เช็คเอาท์นอกเวลา"
+                    ),
+                    "checkout_lat": (
+                        float(student_activity.checkout_lat)
+                        if student_activity.checkout_lat is not None
+                        else None
+                    ),
+                    "checkout_lng": (
+                        float(student_activity.checkout_lng)
+                        if student_activity.checkout_lng is not None
                         else None
                     ),
                 },
@@ -754,7 +707,6 @@ def get_student_dashboard(
 
         activities.append({
             "activity_id": activity.activity_id,
-
             "activity_name": activity.activity_name,
 
             "activity_date": (
@@ -763,31 +715,18 @@ def get_student_dashboard(
                 else None
             ),
 
-            "start_time": format_time_dot(
-                activity.start_time
-            ),
+            "start_time": format_time_dot(activity.start_time),
+            "end_time": format_time_dot(activity.end_time),
 
-            "end_time": format_time_dot(
-                activity.end_time
-            ),
-
-            # เวลากิจกรรมจริง
             "hours": activity_hours,
-
-            # ชั่วโมงจิตอาสาของกิจกรรม
             "volunteer_hours": volunteer_hours,
-
-            # ชั่วโมงจิตอาสาที่ได้จริง
             "earned_hours": earned_hours,
 
             "location": activity.location,
-
             "description": activity.description,
-
             "activity_img": activity.activity_img,
 
-            "activity_status": activity.activity_status,
-
+            "activity_status": bool(activity.activity_status),
             "attendance_status": attendance_status,
 
             "check_detail": check_detail,
@@ -800,23 +739,15 @@ def get_student_dashboard(
 
     return {
         "detail": "success",
-
         "data": {
             "joined_count": joined_count,
-
             "not_joined_count": not_joined_count,
 
             "checkin_count": checkin_count,
-
             "checkout_count": checkout_count,
 
-            # เวลากิจกรรมรวม
             "total_activity_hours": total_activity_hours,
-
-            # ชั่วโมงจิตอาสารวม
             "total_volunteer_hours": total_volunteer_hours,
-
-            # ชั่วโมงจิตอาสาที่ได้จริงรวม
             "total_earned_hours": total_earned_hours,
 
             "total_activity_count": total_activity_count,
@@ -833,4 +764,379 @@ def get_student_dashboard(
 
             "activities": activities,
         }
+    }
+    
+    
+
+def get_activity_or_404(activity_id: int, db: Session):
+    if activity_id == 0:
+        return None
+
+    activity = (
+        db.query(Activity)
+        .filter(Activity.activity_id == activity_id)
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+
+    return activity
+
+def get_top_activity(db: Session):
+    activities = (
+        db.query(Activity)
+        .filter(Activity.activity_status == True)
+        .all()
+    )
+
+    activity_rank = [
+        build_activity_summary(db, item)
+        for item in activities
+    ]
+
+    activity_rank = sorted(
+        activity_rank,
+        key=lambda x: x["joined_count"],
+        reverse=True
+    )
+
+    if len(activity_rank) == 0:
+        return None
+
+    return activity_rank[0]
+
+@router.get("/admin/sum/{activity_id}", response_model=AdminStudentMessageResponse)
+def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
+    is_all_activity = activity_id == 0
+    activity = get_activity_or_404(activity_id, db)
+
+    hours_count_all = (
+        db.query(func.sum(Activity.hours))
+        .filter(Activity.activity_status == True)
+        .scalar()
+        or 0
+        if is_all_activity
+        else activity.hours
+    )
+
+    volunteer_hours_count_all = (
+        db.query(func.sum(Activity.volunteer_hours))
+        .filter(Activity.activity_status == True)
+        .scalar()
+        or 0
+        if is_all_activity
+        else activity.volunteer_hours
+    )
+
+    activity_count = (
+        db.query(func.count(Activity.activity_id))
+        .filter(Activity.activity_status == True)
+        .scalar()
+        or 0
+        if is_all_activity
+        else 1
+    )
+
+    joined_count = count_students(
+        db=db,
+        activity_id=activity_id,
+        attendance_status="เข้าร่วม"
+    )
+
+    not_joined_count = count_students(
+        db=db,
+        activity_id=activity_id,
+        attendance_status="ไม่เข้าร่วม"
+    )
+
+    checkin_count = count_checkin(
+        db=db,
+        activity_id=activity_id
+    )
+
+    checkout_count = count_checkout(
+        db=db,
+        activity_id=activity_id
+    )
+
+    student_count_all = count_students(
+        db=db,
+        activity_id=activity_id
+    )
+
+    selected_activity = None
+    top_activity = None
+
+    if not is_all_activity:
+        selected_activity = build_activity_summary(db, activity)
+        top_activity = selected_activity
+    else:
+        top_activity = get_top_activity(db)
+
+    return {
+        "detail": "success",
+        "data": {
+            "activity_count": activity_count,
+
+            "joined_count": joined_count,
+            "not_joined_count": not_joined_count,
+            "checkin_count": checkin_count,
+            "checkout_count": checkout_count,
+
+            "student_count_all": student_count_all,
+
+            "hours_count_all": float(hours_count_all or 0),
+            "volunteer_hours_count_all": float(volunteer_hours_count_all or 0),
+
+            "join_rate_percent": calc_percent(
+                joined_count,
+                joined_count + not_joined_count
+            ),
+            "checkout_rate_percent": calc_percent(
+                checkout_count,
+                checkin_count
+            ),
+
+            "top_activity": top_activity,
+            "selected_activity": selected_activity,
+
+            "activity_rank": [],
+            "faculty_rank": [],
+            "major_rank": [],
+            "year_count": [],
+            "faculty": [],
+        }
+    }
+
+
+@router.get("/admin/{activity_id}/activity-rank")
+def get_admin_activity_rank(activity_id: int, db: Session = Depends(get_db)):
+    activity = get_activity_or_404(activity_id, db)
+
+    if activity_id == 0:
+        activities = (
+            db.query(Activity)
+            .filter(Activity.activity_status == True)
+            .all()
+        )
+
+        activity_rank = [
+            build_activity_summary(db, item)
+            for item in activities
+        ]
+
+        activity_rank = sorted(
+            activity_rank,
+            key=lambda x: x["joined_count"],
+            reverse=True
+        )[:10]
+
+    else:
+        activity_rank = [
+            build_activity_summary(db, activity)
+        ]
+
+    return {
+        "detail": "success",
+        "data": activity_rank
+    }
+
+
+@router.get("/admin/{activity_id}/year-count")
+def get_admin_year_count(activity_id: int, db: Session = Depends(get_db)):
+    get_activity_or_404(activity_id, db)
+
+    year_count = []
+
+    for year in YEAR_STATUS_LIST:
+        year_joined_count = count_students(
+            db=db,
+            activity_id=activity_id,
+            year_status=year,
+            attendance_status="เข้าร่วม"
+        )
+
+        year_not_joined_count = count_students(
+            db=db,
+            activity_id=activity_id,
+            year_status=year,
+            attendance_status="ไม่เข้าร่วม"
+        )
+
+        year_checkin_count = count_checkin(
+            db=db,
+            activity_id=activity_id,
+            year_status=year
+        )
+
+        year_checkout_count = count_checkout(
+            db=db,
+            activity_id=activity_id,
+            year_status=year
+        )
+
+        year_count.append({
+            "name": year,
+            "total_student": count_all_students(
+                db=db,
+                year_status=year
+            ),
+            "count_student": count_students(
+                db=db,
+                activity_id=activity_id,
+                year_status=year
+            ),
+            "joined_count": year_joined_count,
+            "not_joined_count": year_not_joined_count,
+            "checkin_count": year_checkin_count,
+            "checkout_count": year_checkout_count,
+            "join_rate_percent": calc_percent(
+                year_joined_count,
+                year_joined_count + year_not_joined_count
+            ),
+        })
+
+    return {
+        "detail": "success",
+        "data": year_count
+    }
+
+
+@router.get("/admin/{activity_id}/faculty-rank")
+def get_admin_faculty_rank(activity_id: int, db: Session = Depends(get_db)):
+    get_activity_or_404(activity_id, db)
+
+    faculties = (
+        db.query(Faculty)
+        .order_by(Faculty.faculty_id.asc())
+        .all()
+    )
+
+    faculty_rank = []
+
+    for faculty in faculties:
+        faculty_rank.append(
+            build_faculty_rank_item(
+                db=db,
+                faculty=faculty,
+                activity_id=activity_id
+            )
+        )
+
+    faculty_rank = sorted(
+        faculty_rank,
+        key=lambda x: x["joined_count"],
+        reverse=True
+    )
+
+    return {
+        "detail": "success",
+        "data": faculty_rank
+    }
+
+
+@router.get("/admin/{activity_id}/major-rank")
+def get_admin_major_rank(activity_id: int, db: Session = Depends(get_db)):
+    get_activity_or_404(activity_id, db)
+
+    rows = (
+        db.query(Major, Faculty)
+        .join(Faculty, Faculty.faculty_id == Major.faculty_id)
+        .order_by(Major.major_id.asc())
+        .all()
+    )
+
+    major_rank = []
+
+    for major, faculty in rows:
+        major_rank.append(
+            build_major_rank_item(
+                db=db,
+                major=major,
+                faculty=faculty,
+                activity_id=activity_id
+            )
+        )
+
+    major_rank = sorted(
+        major_rank,
+        key=lambda x: x["joined_count"],
+        reverse=True
+    )
+
+    return {
+        "detail": "success",
+        "data": major_rank
+    }
+
+
+@router.get("/admin/{activity_id}/faculty")
+def get_admin_faculty(activity_id: int, db: Session = Depends(get_db)):
+    get_activity_or_404(activity_id, db)
+
+    faculties = (
+        db.query(Faculty)
+        .order_by(Faculty.faculty_id.asc())
+        .all()
+    )
+
+    faculty_result = []
+
+    for faculty in faculties:
+        faculty_rank_item = build_faculty_rank_item(
+            db=db,
+            faculty=faculty,
+            activity_id=activity_id
+        )
+
+        majors = (
+            db.query(Major)
+            .filter(Major.faculty_id == faculty.faculty_id)
+            .order_by(Major.major_id.asc())
+            .all()
+        )
+
+        major_result = []
+
+        for major in majors:
+            major_rank_item = build_major_rank_item(
+                db=db,
+                major=major,
+                faculty=faculty,
+                activity_id=activity_id
+            )
+
+            major_result.append({
+                "major_id": major.major_id,
+                "major_name": major.major_name,
+                "total_student": major_rank_item["total_student"],
+                "joined_count": major_rank_item["joined_count"],
+                "not_joined_count": major_rank_item["not_joined_count"],
+            })
+
+        major_result = sorted(
+            major_result,
+            key=lambda x: x["joined_count"],
+            reverse=True
+        )
+
+        faculty_result.append({
+            "faculty_id": faculty.faculty_id,
+            "faculty_name": faculty.faculty_name,
+            "total_student": faculty_rank_item["total_student"],
+            "joined_count": faculty_rank_item["joined_count"],
+            "not_joined_count": faculty_rank_item["not_joined_count"],
+            "major": major_result,
+        })
+
+    faculty_result = sorted(
+        faculty_result,
+        key=lambda x: x["joined_count"],
+        reverse=True
+    )
+
+    return {
+        "detail": "success",
+        "data": faculty_result
     }
