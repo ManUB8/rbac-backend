@@ -4,7 +4,6 @@ from datetime import date, time
 from decimal import Decimal
 from uuid import UUID
 
-
 def parse_time_dot(value):
     if value is None:
         return None
@@ -13,36 +12,25 @@ def parse_time_dot(value):
         return value
 
     if isinstance(value, str):
-        value = value.strip()
-
-        if value == "":
-            return None
-
-        value = value.replace(":", ".")
-
-        parts = value.split(".")
-
-        if len(parts) != 2:
-            raise ValueError("รูปแบบเวลาต้องเป็น HH.MM เช่น 14.00")
-
-        hh, mm = parts
-
-        if hh == "" or mm == "":
-            raise ValueError("รูปแบบเวลาต้องเป็น HH.MM เช่น 14.00")
-
+        value = value.strip().replace(":", ".")
+        hh, mm = value.split(".")
         return time(hour=int(hh), minute=int(mm))
 
     raise ValueError("รูปแบบเวลาไม่ถูกต้อง")
 
 
+
+# def validate_check_type(value: str):
+#     allowed = ["checkin_only", "checkout_only", "checkin_checkout"]
+#     if value not in allowed:
+#         raise ValueError("check_type ต้องเป็น checkin_only หรือ checkin_checkout")
+#     return value
+
+
 def validate_check_type(value: str):
     allowed = ["checkin_only", "checkout_only", "checkin_checkout"]
-
     if value not in allowed:
-        raise ValueError(
-            "check_type ต้องเป็น checkin_only, checkout_only หรือ checkin_checkout"
-        )
-
+        raise ValueError("check_type ต้องเป็น checkin_only, checkout_only หรือ checkin_checkout")
     return value
 
 
@@ -53,28 +41,68 @@ class HourTypeResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+    
+# class ActivityCreateRequest(BaseModel):
+#     activity_name: str
+#     activity_date: date
+#     start_time: time
+#     end_time: time
+#     hours: float
+#     volunteer_hours: Decimal = Decimal("0")
+#     location: Optional[str] = None
+#     description: Optional[str] = None
+#     activity_img: Optional[str] = None
+#     activity_status: bool = True
+#     checkin_open_time: Optional[time] = None
+#     checkin_close_time: Optional[time] = None
+#     checkout_open_time: Optional[time] = None
+#     checkout_close_time: Optional[time] = None
+#     created_by_name: str
+#     hour_type_id: UUID
+
+#     check_type: str = "checkin_only"
+#     require_registration: bool = False
+#     max_participants: Optional[int] = None
+
+#     activity_lat: Optional[float] = None
+#     activity_lng: Optional[float] = None
+#     activity_radius_meter: int = 100
+
+#     @field_validator(
+#         "start_time",
+#         "end_time",
+#         "checkin_open_time",
+#         "checkin_close_time",
+#         "checkout_open_time",
+#         "checkout_close_time",
+#         mode="before"
+#     )
+#     @classmethod
+#     def validate_time_format(cls, value):
+#         return parse_time_dot(value)
+
+#     @field_validator("check_type")
+#     @classmethod
+#     def validate_check_type_field(cls, value):
+#         return validate_check_type(value)
+
 
 
 class ActivityCreateRequest(BaseModel):
     activity_name: str
     activity_date: date
-
     start_time: time
     end_time: time
-
     hours: float
     volunteer_hours: Decimal = Decimal("0")
-
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool = True
-
     checkin_open_time: Optional[time] = None
     checkin_close_time: Optional[time] = None
     checkout_open_time: Optional[time] = None
     checkout_close_time: Optional[time] = None
-
     created_by_name: str
     hour_type_id: UUID
 
@@ -108,18 +136,14 @@ class ActivityCreateRequest(BaseModel):
     def validate_check_type_time(self):
         if self.check_type == "checkin_only":
             if self.checkin_open_time is None or self.checkin_close_time is None:
-                raise ValueError(
-                    "กิจกรรมแบบเช็คอิน ต้องกรอกเวลาเปิดและปิดเช็คอิน"
-                )
+                raise ValueError("กิจกรรมแบบเช็คอิน ต้องกรอกเวลาเปิดและปิดเช็คอิน")
 
             self.checkout_open_time = None
             self.checkout_close_time = None
 
         elif self.check_type == "checkout_only":
             if self.checkout_open_time is None or self.checkout_close_time is None:
-                raise ValueError(
-                    "กิจกรรมแบบเช็คเอาท์ ต้องกรอกเวลาเปิดและปิดเช็คเอาท์"
-                )
+                raise ValueError("กิจกรรมแบบเช็คเอาท์ ต้องกรอกเวลาเปิดและปิดเช็คเอาท์")
 
             self.checkin_open_time = None
             self.checkin_close_time = None
@@ -131,35 +155,27 @@ class ActivityCreateRequest(BaseModel):
                 or self.checkout_open_time is None
                 or self.checkout_close_time is None
             ):
-                raise ValueError(
-                    "กิจกรรมแบบเช็คอินและเช็คเอาท์ ต้องกรอกเวลาทั้งสองส่วน"
-                )
+                raise ValueError("กิจกรรมแบบเช็คอินและเช็คเอาท์ ต้องกรอกเวลาทั้งสองส่วน")
 
         return self
-
-
+    
+    
 class ActivityUpdateRequest(BaseModel):
     activity_id: int
-
     activity_name: Optional[str] = None
     activity_date: Optional[date] = None
-
     start_time: Optional[time] = None
     end_time: Optional[time] = None
-
     hours: Optional[float] = None
     volunteer_hours: Optional[Decimal] = None
-
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: Optional[bool] = None
-
     checkin_open_time: Optional[time] = None
     checkin_close_time: Optional[time] = None
     checkout_open_time: Optional[time] = None
     checkout_close_time: Optional[time] = None
-
     updated_by_name: str
     hour_type_id: Optional[UUID] = None
 
@@ -189,41 +205,7 @@ class ActivityUpdateRequest(BaseModel):
     def validate_check_type_field(cls, value):
         if value is None:
             return value
-
         return validate_check_type(value)
-
-    @model_validator(mode="after")
-    def validate_check_type_time(self):
-        if self.check_type == "checkin_only":
-            if self.checkin_open_time is None or self.checkin_close_time is None:
-                raise ValueError(
-                    "กิจกรรมแบบเช็คอิน ต้องกรอกเวลาเปิดและปิดเช็คอิน"
-                )
-
-            self.checkout_open_time = None
-            self.checkout_close_time = None
-
-        elif self.check_type == "checkout_only":
-            if self.checkout_open_time is None or self.checkout_close_time is None:
-                raise ValueError(
-                    "กิจกรรมแบบเช็คเอาท์ ต้องกรอกเวลาเปิดและปิดเช็คเอาท์"
-                )
-
-            self.checkin_open_time = None
-            self.checkin_close_time = None
-
-        elif self.check_type == "checkin_checkout":
-            if (
-                self.checkin_open_time is None
-                or self.checkin_close_time is None
-                or self.checkout_open_time is None
-                or self.checkout_close_time is None
-            ):
-                raise ValueError(
-                    "กิจกรรมแบบเช็คอินและเช็คเอาท์ ต้องกรอกเวลาทั้งสองส่วน"
-                )
-
-        return self
 
 
 class ActivityDeleteRequest(BaseModel):
@@ -235,23 +217,18 @@ class ActivityResponse(BaseModel):
     activity_id: int
     activity_name: str
     activity_date: date
-
     start_time: time
     end_time: time
-
     hours: float
     volunteer_hours: Decimal
-
     location: Optional[str] = None
     description: Optional[str] = None
     activity_img: Optional[str] = None
     activity_status: bool
-
     checkin_open_time: Optional[time] = None
     checkin_close_time: Optional[time] = None
     checkout_open_time: Optional[time] = None
     checkout_close_time: Optional[time] = None
-
     hour_type_id: Optional[UUID] = None
     hour_type: Optional[HourTypeResponse] = None
 
@@ -281,7 +258,6 @@ class ActivityResponse(BaseModel):
     def serialize_time(self, value: Optional[time]):
         if value is None:
             return None
-
         return value.strftime("%H.%M")
 
     model_config = {
@@ -301,7 +277,7 @@ class ActivityDeleteResponse(BaseModel):
     updated_by_id: Optional[int] = None
     updated_by_name: Optional[str] = None
 
-
+    
 class ActivityWithRegisterCountResponse(ActivityResponse):
     registered_count: int = 0
     register_text: Optional[str] = None
@@ -312,12 +288,11 @@ class ActivityListPublicResponse(BaseModel):
     detail: str
     data: List[ActivityWithRegisterCountResponse]
 
-
 class ActivityMessageResponse(BaseModel):
     detail: str
     data: ActivityResponse
-
-
+    
+    
 class AdminActivityFilterInfo(BaseModel):
     id: int
     name: str
@@ -340,7 +315,6 @@ class ActivityAdminListResponse(BaseModel):
     total_inactive_activity: int
 
     activity: List[ActivityWithRegisterCountResponse]
-
 
 class FilterOption(BaseModel):
     label: str
