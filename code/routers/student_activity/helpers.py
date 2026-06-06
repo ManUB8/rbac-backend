@@ -238,6 +238,7 @@ def build_student_activity_response(
         ),
         "location": activity.location,
         "check_type": activity.check_type,
+        "target_group": activity.target_group,
         "require_registration": activity.require_registration,
         "max_participants": activity.max_participants,
         # เวลากิจกรรมจริง
@@ -300,3 +301,38 @@ def build_student_activity_response(
         "created_at": item.created_at,
         "updated_at": item.updated_at,
     }
+    
+def validate_student_target_group(student, activity):
+    if activity.target_group == "all":
+        return
+
+    if activity.target_group == "freshman":
+        if student.year_status != "ปี 1":
+            raise HTTPException(
+                status_code=403,
+                detail="กิจกรรมนี้ไม่เปิดให้ชั้นปีของคุณเข้าร่วม"
+            )
+        return
+
+    if activity.target_group == "senior":
+        if student.year_status not in ["ปี 2", "ปี 3", "ปี 4"]:
+            raise HTTPException(
+                status_code=403,
+                detail="กิจกรรมนี้ไม่เปิดให้ชั้นปีของคุณเข้าร่วม"
+            )
+        return
+
+    raise HTTPException(
+        status_code=400,
+        detail="กลุ่มผู้เข้าร่วมของกิจกรรมไม่ถูกต้อง"
+    )
+
+
+def get_allowed_target_groups_for_student(student):
+    if student.year_status == "ปี 1":
+        return ["all", "freshman"]
+
+    if student.year_status in ["ปี 2", "ปี 3", "ปี 4"]:
+        return ["all", "senior"]
+
+    return ["all"]

@@ -154,6 +154,7 @@ class StudentActivityViewItemResponse(BaseModel):
     prefix: Optional[str] = None
 
     check_type: str
+    target_group: str = "all"
 
     require_registration: bool
 
@@ -242,6 +243,7 @@ class StudentActivityAvailableItemResponse(BaseModel):
     activity_img: Optional[str] = None
 
     check_type: str
+    target_group: str = "all"
 
     require_registration: bool
 
@@ -327,6 +329,7 @@ class StudentActivityAllInOneActivityItem(BaseModel):
     hour_type_id: Optional[str] = None
 
     check_type: str
+    target_group: str = "all"
 
     require_registration: bool
 

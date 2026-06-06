@@ -1,6 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+from typing import Optional
+from datetime import date
+from database import get_db
 
 from models import Activity, ActivityHourType, StudentActivity
 from schemas.schemas_activity import (
@@ -11,6 +15,7 @@ from schemas.schemas_activity import (
     ActivityResponse,
     ActivityWithRegisterCountResponse,
     AdminActivityFilterInfo,
+    ActivityFilterByDateResponse
 )
 
 from .helpers import get_db
@@ -98,6 +103,7 @@ def get_all_activities_admin(
     if data.require_registration != "":
         require_registration_bool = data.require_registration.lower() == "true"
         query = query.filter(Activity.require_registration == require_registration_bool)
+
     if data.hour_type_id != "":
         query = query.filter(Activity.hour_type_id == data.hour_type_id)
 
@@ -237,4 +243,75 @@ def get_activity_filter_all(db: Session = Depends(get_db)):
                 "id": "false"
             }
         ]
+    }
+
+
+
+@router.get("/filter-by-date", response_model=ActivityFilterByDateResponse)
+def get_activity_filter_by_date(
+    activity_date: Optional[date] = Query(default=None),
+    start_date: Optional[date] = Query(default=None),
+    end_date: Optional[date] = Query(default=None),
+    target_group: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Activity).filter(Activity.activity_status == True)
+
+    if activity_date is not None:
+        query = query.filter(Activity.activity_date == activity_date)
+
+    if start_date is not None:
+        query = query.filter(Activity.activity_date >= start_date)
+
+    if end_date is not None:
+        query = query.filter(Activity.activity_date <= end_date)
+
+    if target_group is not None and target_group.strip() != "":
+        query = query.filter(Activity.target_group == target_group)
+
+    activities = (
+        query
+        .order_by(Activity.activity_date.asc(), Activity.start_time.asc())
+        .all()
+    )
+
+    data = []
+
+    for activity in activities:
+        registered_count = (
+            db.query(func.count(StudentActivity.student_activity_id))
+            .filter(StudentActivity.activity_id == activity.activity_id)
+            .scalar()
+            or 0
+        )
+
+        is_full = False
+        register_text = None
+
+        if activity.require_registration:
+            if activity.max_participants is not None:
+                register_text = f"{registered_count}/{activity.max_participants}"
+                is_full = registered_count >= activity.max_participants
+            else:
+                register_text = str(registered_count)
+
+        data.append({
+            "activity_id": activity.activity_id,
+            "activity_name": activity.activity_name,
+            "activity_date": activity.activity_date,
+            "start_time": activity.start_time,
+            "end_time": activity.end_time,
+            "location": activity.location,
+            "check_type": activity.check_type,
+            "target_group": activity.target_group,
+            "require_registration": activity.require_registration,
+            "max_participants": activity.max_participants,
+            "registered_count": registered_count,
+            "register_text": register_text,
+            "is_full": is_full,
+        })
+
+    return {
+        "detail": "ดึงกิจกรรมตามวันที่สำเร็จ",
+        "data": data
     }

@@ -10,7 +10,8 @@ from .helpers import (
     build_student_activity_response,
     get_scan_status_text,
     format_activity_time_text,
-    format_time_dot
+    format_time_dot,
+    validate_student_target_group,
 )
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
@@ -38,6 +39,7 @@ def register_activity(
 ):
     student = get_student_by_code(db, body.student_code)
     activity = get_activity_by_id(db, body.activity_id)
+    validate_student_target_group(student, activity)
 
     if not activity.require_registration:
         raise HTTPException(
@@ -109,6 +111,7 @@ def checkin_activity(
     admin = get_scan_admin_by_name(db, body.created_by_name)
     student = get_student_by_code(db, body.student_code)
     activity = get_activity_by_id(db, body.activity_id)
+    validate_student_target_group(student, activity)
 
     if activity.check_type == "checkout_only":
         raise HTTPException(status_code=400, detail="กิจกรรมนี้ไม่รองรับการเช็คอิน")
@@ -128,8 +131,6 @@ def checkin_activity(
         current_time
     )
 
-    is_valid_checkin_time = checkin_time_status == "valid"
-
     if admin.role == "temporary_admin":
         if checkin_time_status == "not_started":
             raise HTTPException(
@@ -142,6 +143,11 @@ def checkin_activity(
                 status_code=403,
                 detail="หมดเวลาลงทะเบียนเช็คอินแล้ว"
             )
+
+    is_valid_checkin_time = (
+        checkin_time_status == "valid"
+        or (admin.role == "admin" and checkin_time_status == "not_started")
+    )
 
     item = (
         db.query(StudentActivity)
@@ -385,6 +391,7 @@ def get_student_activity_all_in_one(
             "hour_type_id": str(activity.hour_type_id) if activity.hour_type_id else None,
 
             "check_type": activity.check_type,
+            "target_group": activity.target_group,
             "require_registration": activity.require_registration,
             "max_participants": activity.max_participants,
 
@@ -561,6 +568,7 @@ def get_student_activity_all_in_one(
                 ),
 
                 "check_type": activity.check_type,
+                "target_group": activity.target_group,
 
                 "require_registration": activity.require_registration,
 

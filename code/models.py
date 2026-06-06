@@ -168,7 +168,14 @@ class Student(Base):
 # =========================
 class Activity(Base):
     __tablename__ = "activities"
+    __table_args__ = (
+        CheckConstraint(
+            "target_group IN ('all', 'freshman', 'senior')",
+            name="chk_activity_target_group"
+        ),
+    )
 
+    target_group = Column(String(30), nullable=False, default="all")
     activity_id = Column(Integer, primary_key=True, index=True)
     activity_name = Column(String(255), nullable=False)
     activity_date = Column(Date, nullable=False)
