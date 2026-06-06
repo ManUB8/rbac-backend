@@ -15,11 +15,10 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
     admin = get_admin_by_name(db, data.created_by_name)
 
     validate_activity_data(data)
+
     hour_type = (
         db.query(ActivityHourType)
-        .filter(
-            ActivityHourType.hour_type_id == data.hour_type_id,
-        )
+        .filter(ActivityHourType.hour_type_id == data.hour_type_id)
         .first()
     )
 
@@ -44,14 +43,13 @@ def create_activity(data: ActivityCreateRequest, db: Session = Depends(get_db)):
         checkout_open_time=data.checkout_open_time,
         checkout_close_time=data.checkout_close_time,
         hour_type_id=data.hour_type_id,
-
+        target_group=data.target_group,
         check_type=data.check_type,
         require_registration=data.require_registration,
         max_participants=data.max_participants,
         activity_lat=data.activity_lat,
         activity_lng=data.activity_lng,
         activity_radius_meter=data.activity_radius_meter,
-
         created_by_id=admin.user_id,
         created_by_name=admin.name,
         updated_by_id=admin.user_id,

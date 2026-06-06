@@ -1,5 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from .helpers import build_student_activity_response,get_student_by_code ,format_activity_time_text, get_scan_status_text
+from .helpers import (
+    build_student_activity_response,
+    format_activity_time_text,
+    get_allowed_target_groups_for_student,
+    get_student_by_code,
+)
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, func
 from database import get_db
@@ -55,10 +60,14 @@ def get_available_activities_for_student(
     db: Session = Depends(get_db)
 ):
     student = get_student_by_code(db, student_code)
+    allowed_target_groups = get_allowed_target_groups_for_student(student)
 
     activities = (
         db.query(Activity)
-        .filter(Activity.activity_status == True)
+        .filter(
+            Activity.activity_status == True,
+            Activity.target_group.in_(allowed_target_groups)
+        )
         .order_by(Activity.activity_id.desc())
         .all()
     )
@@ -128,6 +137,7 @@ def get_available_activities_for_student(
             "activity_img": activity.activity_img,
 
             "check_type": activity.check_type,
+            "target_group": activity.target_group,
             "require_registration": activity.require_registration,
             "max_participants": activity.max_participants,
 

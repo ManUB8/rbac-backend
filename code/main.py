@@ -12,7 +12,7 @@ from routers.upload_router import router as upload_router
 from routers.student_activity_router import router as student_activity
 from routers.admin_dashboard import router as admin_dashboard
 from routers.position_router import router as position_router
-from service.student_router_v2 import router as student_router_v2
+from api.v2.students.router import router as student_router_v2
 
 Base.metadata.create_all(bind=engine)
 

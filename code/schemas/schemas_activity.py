@@ -58,7 +58,7 @@ class HourTypeResponse(BaseModel):
 class ActivityCreateRequest(BaseModel):
     activity_name: str
     activity_date: date
-
+    target_group: str = "all"
     start_time: time
     end_time: time
 
@@ -140,6 +140,7 @@ class ActivityCreateRequest(BaseModel):
 
 class ActivityUpdateRequest(BaseModel):
     activity_id: int
+    target_group: str = "all"
 
     activity_name: Optional[str] = None
     activity_date: Optional[date] = None
@@ -235,6 +236,7 @@ class ActivityResponse(BaseModel):
     activity_id: int
     activity_name: str
     activity_date: date
+    target_group: str = "all"
 
     start_time: time
     end_time: time
@@ -352,3 +354,30 @@ class ActivityFilterAllResponse(BaseModel):
     check_type: List[FilterOption]
     activity_status: List[FilterOption]
     require_registration: List[FilterOption]
+
+
+
+
+class ActivityFilterByDateItemResponse(BaseModel):
+    activity_id: int
+    activity_name: str
+    activity_date: date
+    start_time: time
+    end_time: time
+    location: Optional[str] = None
+    check_type: str
+    target_group: str
+    require_registration: bool
+    max_participants: Optional[int] = None
+    registered_count: int = 0
+    register_text: Optional[str] = None
+    is_full: bool = False
+
+    @field_serializer("start_time", "end_time")
+    def serialize_time(self, value: time):
+        return value.strftime("%H.%M")
+
+
+class ActivityFilterByDateResponse(BaseModel):
+    detail: str
+    data: List[ActivityFilterByDateItemResponse]

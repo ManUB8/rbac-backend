@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from models import Activity, ActivityHourType
+from models import Activity, ActivityHourType, StudentActivity
 from schemas.schemas_activity import ActivityMessageResponse, ActivityUpdateRequest
 
-from .helpers import get_admin_by_name, get_db, get_unix_time
+from .helpers import get_admin_by_name, get_db, get_unix_time, validate_target_group
+from routers.student_activity.helpers import calculate_earned_hours, get_time_window_status
 
 
 router = APIRouter()
@@ -23,6 +26,19 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
     admin = get_admin_by_name(db, data.updated_by_name)
 
     update_data = data.model_dump(exclude_unset=True)
+    should_recalculate_hours = "volunteer_hours" in update_data
+    should_recalculate_scan_status = any(
+        key in update_data
+        for key in [
+            "checkin_open_time",
+            "checkin_close_time",
+            "checkout_open_time",
+            "checkout_close_time",
+        ]
+    )
+
+    if "target_group" in update_data:
+        validate_target_group(update_data["target_group"])
 
     new_start_time = update_data.get("start_time", activity.start_time)
     new_end_time = update_data.get("end_time", activity.end_time)
@@ -30,13 +46,11 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
     new_checkin_close_time = update_data.get("checkin_close_time", activity.checkin_close_time)
     new_checkout_open_time = update_data.get("checkout_open_time", activity.checkout_open_time)
     new_checkout_close_time = update_data.get("checkout_close_time", activity.checkout_close_time)
-    
+
     if "hour_type_id" in update_data:
         hour_type = (
             db.query(ActivityHourType)
-            .filter(
-                ActivityHourType.hour_type_id == update_data["hour_type_id"],
-            )
+            .filter(ActivityHourType.hour_type_id == update_data["hour_type_id"])
             .first()
         )
 
@@ -83,6 +97,44 @@ def update_activity(activity_id: int, data: ActivityUpdateRequest, db: Session =
     activity.updated_by_id = admin.user_id
     activity.updated_by_name = admin.name
     activity.updated_at = get_unix_time()
+
+    if should_recalculate_hours or should_recalculate_scan_status:
+        items = (
+            db.query(StudentActivity)
+            .filter(StudentActivity.activity_id == activity.activity_id)
+            .all()
+        )
+
+        for item in items:
+            if should_recalculate_scan_status:
+                if item.checkin_at is not None:
+                    checkin_time = datetime.fromtimestamp(
+                        item.checkin_at,
+                        ZoneInfo("Asia/Bangkok")
+                    ).time()
+                    checkin_status = get_time_window_status(
+                        activity.checkin_open_time,
+                        activity.checkin_close_time,
+                        checkin_time
+                    )
+                    item.checkin_status = "valid" if checkin_status == "valid" else "manual"
+
+                if item.checkout_at is not None:
+                    checkout_time = datetime.fromtimestamp(
+                        item.checkout_at,
+                        ZoneInfo("Asia/Bangkok")
+                    ).time()
+                    checkout_status = get_time_window_status(
+                        activity.checkout_open_time,
+                        activity.checkout_close_time,
+                        checkout_time
+                    )
+                    item.checkout_status = "valid" if checkout_status == "valid" else "manual"
+
+            item.earned_hours = calculate_earned_hours(activity, item)
+            item.updated_by_id = admin.user_id
+            item.updated_by_name = admin.name
+            item.updated_at = activity.updated_at
 
     db.commit()
     db.refresh(activity)

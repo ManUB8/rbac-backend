@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct
+from sqlalchemy import case, func, distinct
+from typing import Optional
 
 from database import SessionLocal
 from models import Activity, Student, Faculty, Major, StudentActivity
 from schemas.schemas_admin_dashboard import (
     AdminStudentMessageResponse,
+    DashboardActivityYearBreakdownResponse,
     StudentDashboardMessageResponse,
 )
 
@@ -47,9 +49,9 @@ def format_time_dot(value):
 
 def count_all_students(
     db: Session,
-    faculty_id: int | None = None,
-    major_id: int | None = None,
-    year_status: str | None = None,
+    faculty_id: Optional[int] = None,
+    major_id: Optional[int] = None,
+    year_status: Optional[str] = None,
 ):
     q = db.query(func.count(Student.student_id))
 
@@ -68,10 +70,10 @@ def count_all_students(
 def count_students(
     db: Session,
     activity_id: int,
-    faculty_id: int | None = None,
-    major_id: int | None = None,
-    year_status: str | None = None,
-    attendance_status: str | None = None,
+    faculty_id: Optional[int] = None,
+    major_id: Optional[int] = None,
+    year_status: Optional[str] = None,
+    attendance_status: Optional[str] = None,
 ):
     is_all_activity = activity_id == 0
 
@@ -104,9 +106,9 @@ def count_students(
 def count_checkin(
     db: Session,
     activity_id: int,
-    faculty_id: int | None = None,
-    major_id: int | None = None,
-    year_status: str | None = None,
+    faculty_id: Optional[int] = None,
+    major_id: Optional[int] = None,
+    year_status: Optional[str] = None,
 ):
     is_all_activity = activity_id == 0
 
@@ -134,9 +136,9 @@ def count_checkin(
 def count_checkout(
     db: Session,
     activity_id: int,
-    faculty_id: int | None = None,
-    major_id: int | None = None,
-    year_status: str | None = None,
+    faculty_id: Optional[int] = None,
+    major_id: Optional[int] = None,
+    year_status: Optional[str] = None,
 ):
     is_all_activity = activity_id == 0
 
@@ -302,6 +304,332 @@ def build_major_rank_item(db: Session, major: Major, faculty: Faculty, activity_
         "checkin_count": checkin_count,
         "checkout_count": checkout_count,
         "join_rate_percent": calc_percent(joined_count, total_count),
+    }
+
+
+def build_activity_count_summary(
+    db: Session,
+    activity_id: int,
+    faculty_id: Optional[int] = None,
+    major_id: Optional[int] = None,
+    year_status: Optional[str] = None,
+):
+    joined_count = count_students(
+        db=db,
+        activity_id=activity_id,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status,
+        attendance_status="เข้าร่วม"
+    )
+
+    not_joined_count = count_students(
+        db=db,
+        activity_id=activity_id,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status,
+        attendance_status="ไม่เข้าร่วม"
+    )
+
+    checkin_count = count_checkin(
+        db=db,
+        activity_id=activity_id,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status
+    )
+
+    checkout_count = count_checkout(
+        db=db,
+        activity_id=activity_id,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status
+    )
+
+    count_student = count_students(
+        db=db,
+        activity_id=activity_id,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status
+    )
+
+    total_student = count_all_students(
+        db=db,
+        faculty_id=faculty_id,
+        major_id=major_id,
+        year_status=year_status
+    )
+
+    return {
+        "total_student": total_student,
+        "count_student": count_student,
+        "joined_count": joined_count,
+        "not_joined_count": not_joined_count,
+        "checkin_count": checkin_count,
+        "checkout_count": checkout_count,
+        "join_rate_percent": calc_percent(
+            joined_count,
+            joined_count + not_joined_count
+        ),
+        "checkout_rate_percent": calc_percent(checkout_count, checkin_count),
+    }
+
+
+def get_dashboard_year_statuses(db: Session):
+    year_rows = (
+        db.query(Student.year_status)
+        .filter(Student.year_status.isnot(None))
+        .distinct()
+        .all()
+    )
+
+    existing_years = [
+        row[0]
+        for row in year_rows
+        if row[0] is not None and str(row[0]).strip() != ""
+    ]
+
+    result = []
+    for year in YEAR_STATUS_LIST + sorted(existing_years):
+        if year not in result:
+            result.append(year)
+
+    return result
+
+
+def empty_activity_summary():
+    return {
+        "total_student": 0,
+        "count_student": 0,
+        "joined_count": 0,
+        "not_joined_count": 0,
+        "checkin_count": 0,
+        "checkout_count": 0,
+        "join_rate_percent": 0.0,
+        "checkout_rate_percent": 0.0,
+    }
+
+
+def finalize_activity_summary(summary: dict):
+    summary["join_rate_percent"] = calc_percent(
+        summary["joined_count"],
+        summary["joined_count"] + summary["not_joined_count"]
+    )
+    summary["checkout_rate_percent"] = calc_percent(
+        summary["checkout_count"],
+        summary["checkin_count"]
+    )
+    return summary
+
+
+def add_activity_summary(target: dict, source: dict):
+    for key in [
+        "total_student",
+        "count_student",
+        "joined_count",
+        "not_joined_count",
+        "checkin_count",
+        "checkout_count",
+    ]:
+        target[key] += source[key]
+
+
+@router.get(
+    "/admin/activity/{activity_id}/year-faculty-major",
+    response_model=DashboardActivityYearBreakdownResponse
+)
+def get_activity_year_faculty_major_dashboard(
+    activity_id: int,
+    year_status: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    activity = (
+        db.query(Activity)
+        .filter(Activity.activity_id == activity_id)
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(status_code=404, detail="ไม่พบกิจกรรม")
+
+    year_filter = (
+        year_status.strip()
+        if year_status is not None and year_status.strip() != ""
+        else None
+    )
+
+    faculties = db.query(Faculty).order_by(Faculty.faculty_id.asc()).all()
+    majors = db.query(Major).order_by(Major.major_id.asc()).all()
+
+    year_statuses = [year_filter] if year_filter else get_dashboard_year_statuses(db)
+    year_set = set(year_statuses)
+
+    major_map = {
+        major.major_id: {
+            "major_id": major.major_id,
+            "major_name": major.major_name,
+            "faculty_id": major.faculty_id,
+        }
+        for major in majors
+    }
+
+    faculty_map = {
+        faculty.faculty_id: {
+            "faculty_id": faculty.faculty_id,
+            "faculty_name": faculty.faculty_name,
+            "major_ids": [
+                major.major_id
+                for major in majors
+                if major.faculty_id == faculty.faculty_id
+            ],
+        }
+        for faculty in faculties
+    }
+
+    total_rows_query = (
+        db.query(
+            Student.year_status,
+            Student.faculty_id,
+            Student.major_id,
+            func.count(Student.student_id).label("total_student"),
+        )
+        .group_by(Student.year_status, Student.faculty_id, Student.major_id)
+    )
+
+    if year_filter:
+        total_rows_query = total_rows_query.filter(Student.year_status == year_filter)
+
+    total_rows = total_rows_query.all()
+
+    activity_rows_query = (
+        db.query(
+            Student.year_status,
+            Student.faculty_id,
+            Student.major_id,
+            func.count(distinct(Student.student_id)).label("count_student"),
+            func.count(
+                distinct(
+                    case(
+                        (StudentActivity.attendance_status == "เข้าร่วม", Student.student_id),
+                        else_=None
+                    )
+                )
+            ).label("joined_count"),
+            func.count(
+                distinct(
+                    case(
+                        (StudentActivity.attendance_status == "ไม่เข้าร่วม", Student.student_id),
+                        else_=None
+                    )
+                )
+            ).label("not_joined_count"),
+            func.count(
+                distinct(
+                    case(
+                        (StudentActivity.checkin_at.isnot(None), Student.student_id),
+                        else_=None
+                    )
+                )
+            ).label("checkin_count"),
+            func.count(
+                distinct(
+                    case(
+                        (StudentActivity.checkout_at.isnot(None), Student.student_id),
+                        else_=None
+                    )
+                )
+            ).label("checkout_count"),
+        )
+        .join(StudentActivity, StudentActivity.student_id == Student.student_id)
+        .filter(StudentActivity.activity_id == activity_id)
+        .group_by(Student.year_status, Student.faculty_id, Student.major_id)
+    )
+
+    if year_filter:
+        activity_rows_query = activity_rows_query.filter(Student.year_status == year_filter)
+
+    activity_rows = activity_rows_query.all()
+
+    summary_by_major = {}
+
+    for row in total_rows:
+        current_year = row.year_status
+        if current_year is None or str(current_year).strip() == "":
+            continue
+
+        year_set.add(current_year)
+        key = (current_year, row.faculty_id, row.major_id)
+        summary = summary_by_major.setdefault(key, empty_activity_summary())
+        summary["total_student"] = row.total_student or 0
+
+    for row in activity_rows:
+        current_year = row.year_status
+        if current_year is None or str(current_year).strip() == "":
+            continue
+
+        year_set.add(current_year)
+        key = (current_year, row.faculty_id, row.major_id)
+        summary = summary_by_major.setdefault(key, empty_activity_summary())
+        summary["count_student"] = row.count_student or 0
+        summary["joined_count"] = row.joined_count or 0
+        summary["not_joined_count"] = row.not_joined_count or 0
+        summary["checkin_count"] = row.checkin_count or 0
+        summary["checkout_count"] = row.checkout_count or 0
+
+    ordered_years = []
+    for item in YEAR_STATUS_LIST + sorted(year_set):
+        if item in year_set and item not in ordered_years:
+            ordered_years.append(item)
+
+    year_result = []
+
+    for current_year in ordered_years:
+        year_summary = empty_activity_summary()
+        faculty_result = []
+
+        for faculty_id, faculty in faculty_map.items():
+            faculty_summary = empty_activity_summary()
+            major_result = []
+
+            for major_id in faculty["major_ids"]:
+                major = major_map[major_id]
+                major_summary = summary_by_major.get(
+                    (current_year, faculty_id, major_id),
+                    empty_activity_summary()
+                ).copy()
+
+                add_activity_summary(faculty_summary, major_summary)
+
+                major_result.append({
+                    "major_id": major["major_id"],
+                    "major_name": major["major_name"],
+                    **finalize_activity_summary(major_summary),
+                })
+
+            add_activity_summary(year_summary, faculty_summary)
+
+            faculty_result.append({
+                "faculty_id": faculty["faculty_id"],
+                "faculty_name": faculty["faculty_name"],
+                **finalize_activity_summary(faculty_summary),
+                "major": major_result,
+            })
+
+        year_result.append({
+            "year_status": current_year,
+            **finalize_activity_summary(year_summary),
+            "faculty": faculty_result,
+        })
+
+    return {
+        "detail": "ดึงสรุปกิจกรรมตามชั้นปี คณะ และสาขาสำเร็จ",
+        "data": {
+            "activity": build_activity_summary(db, activity),
+            "year": year_result,
+        }
     }
 
 

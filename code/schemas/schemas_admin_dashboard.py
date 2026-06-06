@@ -149,6 +149,56 @@ class AdminStudentMessageResponse(BaseModel):
     data: AdminStudentItem
 
 
+class DashboardMajorActivityBreakdown(BaseModel):
+    major_id: int
+    major_name: str
+    total_student: int
+    count_student: int
+    joined_count: int
+    not_joined_count: int
+    checkin_count: int
+    checkout_count: int
+    join_rate_percent: float
+    checkout_rate_percent: float
+
+
+class DashboardFacultyActivityBreakdown(BaseModel):
+    faculty_id: int
+    faculty_name: str
+    total_student: int
+    count_student: int
+    joined_count: int
+    not_joined_count: int
+    checkin_count: int
+    checkout_count: int
+    join_rate_percent: float
+    checkout_rate_percent: float
+    major: List[DashboardMajorActivityBreakdown]
+
+
+class DashboardYearActivityBreakdown(BaseModel):
+    year_status: str
+    total_student: int
+    count_student: int
+    joined_count: int
+    not_joined_count: int
+    checkin_count: int
+    checkout_count: int
+    join_rate_percent: float
+    checkout_rate_percent: float
+    faculty: List[DashboardFacultyActivityBreakdown]
+
+
+class DashboardActivityYearBreakdownData(BaseModel):
+    activity: ActivityDashboardSummary
+    year: List[DashboardYearActivityBreakdown]
+
+
+class DashboardActivityYearBreakdownResponse(BaseModel):
+    detail: str
+    data: DashboardActivityYearBreakdownData
+
+
 # =========================
 # STUDENT DASHBOARD
 # =========================
@@ -246,4 +296,3 @@ class StudentDashboardItem(BaseModel):
 class StudentDashboardMessageResponse(BaseModel):
     detail: str
     data: StudentDashboardItem
-

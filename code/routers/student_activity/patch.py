@@ -8,7 +8,8 @@ from .helpers import (
     get_unix_time,
     calculate_earned_hours,
     build_student_activity_response,
-    get_admin_by_name
+    get_admin_by_name,
+    validate_student_target_group,
 )
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
@@ -34,6 +35,7 @@ def checkout_activity(
     admin = get_scan_admin_by_name(db, body.updated_by_name)
     student = get_student_by_code(db, body.student_code)
     activity = get_activity_by_id(db, body.activity_id)
+    validate_student_target_group(student, activity)
 
     if activity.check_type not in ["checkout_only", "checkin_checkout"]:
         raise HTTPException(status_code=400, detail="กิจกรรมนี้ไม่รองรับการเช็คเอาท์")
@@ -168,6 +170,8 @@ def update_student_activity(
 
         if not new_activity:
             raise HTTPException(status_code=404, detail="ไม่พบกิจกรรมใหม่")
+
+        validate_student_target_group(student, new_activity)
 
         duplicate = (
             db.query(StudentActivity)

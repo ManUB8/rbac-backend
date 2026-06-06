@@ -596,3 +596,57 @@ def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
             for student in students
         ]
     }
+    
+    
+@router.get("/summary/year/{year_status}")
+def get_student_summary_by_year(year_status: str, db: Session = Depends(get_db)):
+    students = (
+        db.query(Student)
+        .options(
+            joinedload(Student.faculty),
+            joinedload(Student.major),
+        )
+        .filter(Student.year_status == year_status)
+        .all()
+    )
+
+    faculty_map = {}
+
+    for student in students:
+        faculty_id = student.faculty_id
+        faculty_name = student.faculty.faculty_name if student.faculty else "ไม่ระบุคณะ"
+
+        major_id = student.major_id
+        major_name = student.major.major_name if student.major else "ไม่ระบุสาขา"
+
+        if faculty_id not in faculty_map:
+            faculty_map[faculty_id] = {
+                "faculty_id": faculty_id,
+                "faculty_name": faculty_name,
+                "count_student": 0,
+                "majors": {}
+            }
+
+        faculty_map[faculty_id]["count_student"] += 1
+
+        if major_id not in faculty_map[faculty_id]["majors"]:
+            faculty_map[faculty_id]["majors"][major_id] = {
+                "major_id": major_id,
+                "major_name": major_name,
+                "count_student": 0
+            }
+
+        faculty_map[faculty_id]["majors"][major_id]["count_student"] += 1
+
+    return {
+        "detail": f"สรุปจำนวนนิสิต {year_status} สำเร็จ",
+        "year_status": year_status,
+        "count_student": len(students),
+        "faculty": [
+            {
+                **faculty,
+                "majors": list(faculty["majors"].values())
+            }
+            for faculty in faculty_map.values()
+        ]
+    }

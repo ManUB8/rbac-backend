@@ -1,41 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 import time as time_module
-from fastapi import Query
 from typing import Optional
 from sqlalchemy import func, or_
-from database import SessionLocal
 from models import Student, User, Faculty, Major, Position, StudentPosition, StudentActivity
-from schemas.schemas_student import (
-    StudentRegisterRequest,
-    StudentAdminCreateRequest,
-    StudentResponse,
-    StudentMessageResponse,
-    StudentDeleteRequest,
-    StudentDeleteResponse,
-    FacultyStudentSummaryResponse,
-    MajorStudentSummaryItemResponse,
-    StudentMajorListResponse,
-    StudentAdminUpdateWithUserRequest,
-    StudentDetailWithUserResponse,
-    StudentFilterRequest,
-    StudentFilterResponse,
+from . import repository
+from .constants import DELETE_ALLOWED_ADMIN_NAMES
+from .interfaces import (
     AdminDeleteRequest,
+    StudentAdminCreateRequest,
+    StudentAdminUpdateWithUserRequest,
+    StudentDeleteRequest,
+    StudentFilterRequest,
+    StudentRegisterRequest,
     YEAR_STATUS_LIST,
 )
-
-router = APIRouter(prefix="/student/v2", tags=["Student V2"])
-
-DELETE_ALLOWED_ADMIN_NAMES = ["mangpo", "first", "soda","Tatum","Tum"]
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from .serializers import build_student_response
 
 
 def get_unix_time() -> int:
@@ -43,15 +24,7 @@ def get_unix_time() -> int:
 
 
 def get_admin_by_name(db: Session, admin_name: str) -> User:
-    admin = (
-        db.query(User)
-        .filter(
-            User.name == admin_name,
-            User.role == "admin",
-            User.is_active == True
-        )
-        .first()
-    )
+    admin = repository.get_active_admin_by_name(db, admin_name)
 
     if not admin:
         raise HTTPException(
@@ -75,17 +48,7 @@ def get_delete_admin_by_name(db: Session, admin_name: str) -> User:
 
 
 def get_student_with_relations(db: Session, student_id: int):
-    return (
-        db.query(Student)
-        .options(
-            joinedload(Student.faculty),
-            joinedload(Student.major),
-            joinedload(Student.user),
-            joinedload(Student.student_positions).joinedload(StudentPosition.position),
-        )
-        .filter(Student.student_id == student_id)
-        .first()
-    )
+    return repository.get_student_with_relations(db, student_id)
     
     
 def resolve_faculty_and_major(
@@ -99,12 +62,12 @@ def resolve_faculty_and_major(
     major = None
 
     if faculty_id is not None:
-        faculty = db.query(Faculty).filter(Faculty.faculty_id == faculty_id).first()
+        faculty = repository.get_faculty_by_id(db, faculty_id)
         if not faculty:
             raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสคณะ")
 
     if faculty_name:
-        faculty_by_name = db.query(Faculty).filter(Faculty.faculty_name == faculty_name).first()
+        faculty_by_name = repository.get_faculty_by_name(db, faculty_name)
         if not faculty_by_name:
             raise HTTPException(status_code=404, detail="ไม่พบชื่อคณะ")
 
@@ -114,12 +77,12 @@ def resolve_faculty_and_major(
         faculty = faculty_by_name
 
     if major_id is not None:
-        major = db.query(Major).filter(Major.major_id == major_id).first()
+        major = repository.get_major_by_id(db, major_id)
         if not major:
             raise HTTPException(status_code=404, detail="ไม่พบเลขรหัสสาขา")
 
     if major_name:
-        major_by_name = db.query(Major).filter(Major.major_name == major_name).first()
+        major_by_name = repository.get_major_by_name(db, major_name)
         if not major_by_name:
             raise HTTPException(status_code=404, detail="ไม่พบชื่อสาขา")
 
@@ -137,11 +100,7 @@ def assign_student_position(db: Session, student_id: int, position_body, now: in
     if position_body is None or position_body.position_id is None:
         return None
 
-    position = (
-        db.query(Position)
-        .filter(Position.position_id == position_body.position_id)
-        .first()
-    )
+    position = repository.get_position_by_id(db, position_body.position_id)
 
     if not position:
         raise HTTPException(status_code=400, detail="ไม่พบตำแหน่ง")
@@ -152,14 +111,7 @@ def assign_student_position(db: Session, student_id: int, position_body, now: in
     if position_body.end_date is not None and position_body.end_date < position_body.start_date:
         raise HTTPException(status_code=400, detail="end_date ต้องมากกว่า start_date")
 
-    current_position = (
-        db.query(StudentPosition)
-        .filter(
-            StudentPosition.student_id == student_id,
-            StudentPosition.is_current == True
-        )
-        .first()
-    )
+    current_position = repository.get_current_student_position(db, student_id)
 
     # ถ้าตำแหน่งเดิมเหมือนเดิม ให้ update วันที่เฉย ๆ
     if current_position and current_position.position_id == position_body.position_id:
@@ -190,66 +142,12 @@ def assign_student_position(db: Session, student_id: int, position_body, now: in
     db.flush()
 
     return new_position
-def get_current_position(student: Student):
-    if not hasattr(student, "student_positions") or not student.student_positions:
-        return None
-
-    for item in student.student_positions:
-        if item.is_current:
-            return item
-
-    return None
-
-def build_student_response(student: Student):
-    current_position = get_current_position(student)
-
-    position_data = None
-
-    if current_position:
-        position_data = {
-            "position_id": current_position.position_id,
-            "position_name": current_position.position.position_name if current_position.position else None,
-            "start_date": current_position.start_date,
-            "end_date": current_position.end_date,
-        }
-
-    return {
-        "student_id": student.student_id,
-        "student_code": student.student_code,
-        "prefix": student.prefix,
-        "first_name": student.first_name,
-        "last_name": student.last_name,
-        "gender": student.gender,
-        "year_status": student.year_status,
-
-        "faculty_id": student.faculty_id,
-        "major_id": student.major_id,
-        "user_id": student.user_id,
-        "faculty_name": student.faculty.faculty_name if student.faculty else None,
-        "major_name": student.major.major_name if student.major else None,
-        "img_stu": student.img_stu,
-
-        "position": position_data,
-
-        "created_by_id": student.created_by_id,
-        "created_by_name": student.created_by_name,
-        "updated_by_id": student.updated_by_id,
-        "updated_by_name": student.updated_by_name,
-        "created_at": student.created_at,
-        "updated_at": student.updated_at,
-
-        "user": {
-            "username": student.user.username if student.user else None,
-            "password": student.user.password if student.user else None,
-        } if student.user else None,
-    }
 
 # ==========================================================
 # Register: Student สมัครเอง
 # POST /student/v2/register
 # ==========================================================
-@router.post("/register", response_model=StudentMessageResponse)
-def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)):
+def register_student(data: StudentRegisterRequest, db: Session):
     existing_student = (
         db.query(Student)
         .filter(Student.student_code == data.student_code)
@@ -344,8 +242,7 @@ def register_student(data: StudentRegisterRequest, db: Session = Depends(get_db)
 # Admin Create
 # POST /student/v2/admin/create
 # ==========================================================
-@router.post("/admin/create", response_model=StudentMessageResponse)
-def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(get_db)):
+def admin_create_student(data: StudentAdminCreateRequest, db: Session):
     admin = get_admin_by_name(db, data.created_by_name)
 
     existing_student = (
@@ -444,11 +341,10 @@ def admin_create_student(data: StudentAdminCreateRequest, db: Session = Depends(
 # Admin Update Only
 # PATCH /student/v2/admin/update-stu/{student_id}
 # ==========================================================
-@router.patch("/admin/update-stu/{student_id}", response_model=StudentDetailWithUserResponse)
 def admin_update_student_with_user(
     student_id: int,
     data: StudentAdminUpdateWithUserRequest,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     if student_id != data.student_id:
         raise HTTPException(status_code=400, detail="student_id ใน URL และ body ไม่ตรงกัน")
@@ -605,11 +501,10 @@ def admin_update_student_with_user(
 # Delete เฉพาะ admin: mangpo, first, soda
 # DELETE /student/v2/delete/{student_id}
 # ==========================================================
-@router.delete("/delete/{student_id}", response_model=StudentDeleteResponse)
 def delete_student(
     student_id: int,
     data: StudentDeleteRequest,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     if student_id != data.student_id:
         raise HTTPException(
@@ -661,12 +556,12 @@ def delete_student(
         "updated_by_id": admin.user_id,
         "updated_by_name": admin.name,
     }
+    
 # ==========================================================
 # Get All Students
 # GET /student/v2/all-students
 # ==========================================================
-@router.get("/all-students", response_model=list[StudentDetailWithUserResponse])
-def get_students(db: Session = Depends(get_db)):
+def get_students(db: Session):
     students = (
         db.query(Student)
         .options(
@@ -686,8 +581,7 @@ def get_students(db: Session = Depends(get_db)):
 # Get One Student
 # GET /student/v2/get-one/{student_id}
 # ==========================================================
-@router.get("/get-one/{student_id}", response_model=StudentDetailWithUserResponse)
-def get_student(student_id: int, db: Session = Depends(get_db)):
+def get_student(student_id: int, db: Session):
     student = (
         db.query(Student)
         .options(
@@ -710,8 +604,7 @@ def get_student(student_id: int, db: Session = Depends(get_db)):
 # Summary: Faculties Student
 # GET /student/v2/get-all/faculties-student
 # ==========================================================
-@router.get("/get-all/faculties-student", response_model=list[FacultyStudentSummaryResponse])
-def get_all_faculties_student(db: Session = Depends(get_db)):
+def get_all_faculties_student(db: Session):
     faculties = db.query(Faculty).options(joinedload(Faculty.majors)).all()
 
     results = []
@@ -733,9 +626,8 @@ def get_all_faculties_student(db: Session = Depends(get_db)):
 # Get Majors By Faculty
 # GET /student/v2/get-all/major/{faculty_id}
 # ==========================================================
-@router.get("/get-all/major/{faculty_id}", response_model=list[MajorStudentSummaryItemResponse])
-def get_all_major_by_faculty(faculty_id: int, db: Session = Depends(get_db)):
-    faculty = db.query(Faculty).filter(Faculty.faculty_id == faculty_id).first()
+def get_all_major_by_faculty(faculty_id: int, db: Session):
+    faculty = repository.get_faculty_by_id(db, faculty_id)
 
     if not faculty:
         raise HTTPException(status_code=404, detail="ไม่พบคณะ")
@@ -758,9 +650,8 @@ def get_all_major_by_faculty(faculty_id: int, db: Session = Depends(get_db)):
 # Get Students By Major
 # GET /student/v2/get-all/student-major/{major_id}
 # ==========================================================
-@router.get("/get-all/student-major/{major_id}", response_model=StudentMajorListResponse)
-def get_all_student_by_major(major_id: int, db: Session = Depends(get_db)):
-    major = db.query(Major).filter(Major.major_id == major_id).first()
+def get_all_student_by_major(major_id: int, db: Session):
+    major = repository.get_major_by_id(db, major_id)
 
     if not major:
         raise HTTPException(status_code=404, detail="ไม่พบสาขา")
@@ -802,10 +693,9 @@ def get_year_status_summary(db: Session):
     ]
 
 
-@router.post("/get-all/filter", response_model=StudentFilterResponse)
-def get_all_students_filter(
+def filter_students_by_body(
     body: StudentFilterRequest,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     page = body.page if body.page > 0 else 1
     limit = body.limit if body.limit > 0 else 10
@@ -873,16 +763,15 @@ def get_all_students_filter(
     }
     
     
-@router.get("/get-all/filter", response_model=StudentFilterResponse)
-def get_all_students_filter(
-    search: Optional[str] = Query(None),
-    page: int = Query(1),
-    limit: int = Query(10),
-    faculty_id: int = Query(0),
-    major_id: int = Query(0),
-    position_id: int = Query(0),
-    year_status: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+def filter_students_by_query(
+    db: Session,
+    search: Optional[str] = None,
+    page: int = 1,
+    limit: int = 10,
+    faculty_id: int = 0,
+    major_id: int = 0,
+    position_id: int = 0,
+    year_status: Optional[str] = None,
 ):
     query = db.query(Student)
 
@@ -947,10 +836,9 @@ def get_all_students_filter(
         "data": [build_student_response(student) for student in students],
     }
     
-@router.delete("/admin/delete-all-students")
 def delete_all_students(
     body: AdminDeleteRequest,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     # =========================
     # นับข้อมูลก่อนลบ
@@ -1008,8 +896,7 @@ def delete_all_students(
     }
 
 
-@router.get("/summary/year/{year_status}")
-def get_student_summary_by_year(year_status: str, db: Session = Depends(get_db)):
+def get_student_summary_by_year(year_status: str, db: Session):
     students = (
         db.query(Student)
         .options(
@@ -1062,11 +949,10 @@ def get_student_summary_by_year(year_status: str, db: Session = Depends(get_db))
     }
     
     
-@router.get("/summary/year-code/{year_status}/{student_code_prefix}")
 def get_student_summary_by_year_and_code_prefix(
     year_status: str,
     student_code_prefix: str,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     # กันส่งมาไม่ครบ / ไม่ใช่ 4 ตัว
     if len(student_code_prefix) != 4 or not student_code_prefix.isdigit():
@@ -1131,10 +1017,9 @@ def get_student_summary_by_year_and_code_prefix(
     }
     
     
-@router.get("/summary/code-prefix/{student_code_prefix}")
 def get_student_summary_by_code_prefix(
     student_code_prefix: str,
-    db: Session = Depends(get_db)
+    db: Session
 ):
     # ตรวจสอบ 4 หลัก
     if len(student_code_prefix) != 4 or not student_code_prefix.isdigit():
