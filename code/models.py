@@ -14,7 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     CheckConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
 
@@ -307,3 +307,178 @@ class ActivityHourType(Base):
 
     hour_type_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     hour_type_name = Column(String(100), nullable=False)
+
+
+class ProductCategory(Base):
+    __tablename__ = "product_categories"
+
+    category_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    category_name = Column(String(150), nullable=False, unique=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    product_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    product_name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("product_categories.category_id"), nullable=True)
+
+    base_price = Column(Numeric(10, 2), nullable=True)
+    base_stock = Column(Integer, nullable=False, default=0)
+
+    owner_type = Column(String(30), nullable=False, default="club")
+    faculty_id = Column(Integer, ForeignKey("faculties.faculty_id"), nullable=True)
+    major_id = Column(Integer, ForeignKey("majors.major_id"), nullable=True)
+    external_name = Column(String(255), nullable=True)
+
+    main_image = Column(Text, nullable=True)
+    product_images = Column(JSONB, nullable=True)
+
+    has_variant = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_limited = Column(Boolean, nullable=False, default=False)
+    limit_per_student = Column(Integer, nullable=True)
+
+    weight_gram = Column(Integer, nullable=True)
+    sold_count = Column(Integer, nullable=False, default=0)
+
+    created_by_id = Column(Integer, nullable=True)
+    created_by_name = Column(String(150), nullable=True)
+    updated_by_id = Column(Integer, nullable=True)
+    updated_by_name = Column(String(150), nullable=True)
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class ProductVariant(Base):
+    __tablename__ = "product_variants"
+
+    variant_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.product_id", ondelete="CASCADE"), nullable=False)
+
+    variant_name = Column(String(100), nullable=False, default="Default")
+    color_name = Column(String(100), nullable=True)
+    variant_image = Column(Text, nullable=True)
+    sku_code = Column(String(100), nullable=True)
+
+    price = Column(Numeric(10, 2), nullable=False)
+    stock = Column(Integer, nullable=False, default=0)
+
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class Cart(Base):
+    __tablename__ = "carts"
+
+    cart_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    student_id = Column(Integer, ForeignKey("students.student_id", ondelete="CASCADE"), nullable=False, unique=True)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    cart_item_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cart_id = Column(UUID(as_uuid=True), ForeignKey("carts.cart_id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.product_id"), nullable=False)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.variant_id"), nullable=True)
+
+    quantity = Column(Integer, nullable=False, default=1)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    order_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_no = Column(String(50), nullable=False, unique=True)
+
+    student_id = Column(Integer, ForeignKey("students.student_id"), nullable=False)
+
+    total_amount = Column(Numeric(10, 2), nullable=False, default=0)
+
+    order_status = Column(String(30), nullable=False, default="pending_payment")
+    payment_status = Column(String(30), nullable=False, default="waiting_payment")
+    delivery_type = Column(String(30), nullable=False, default="pickup")
+
+    pickup_code = Column(String(50), nullable=True)
+
+    receiver_name = Column(String(255), nullable=True)
+    receiver_phone = Column(String(50), nullable=True)
+    shipping_address = Column(Text, nullable=True)
+    carrier = Column(String(100), nullable=True)
+    tracking_no = Column(String(100), nullable=True)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+
+    order_item_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.product_id"), nullable=False)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.variant_id"), nullable=True)
+
+    product_name_snapshot = Column(String(255), nullable=False)
+    variant_name_snapshot = Column(String(100), nullable=True)
+    color_name_snapshot = Column(String(100), nullable=True)
+
+    price_snapshot = Column(Numeric(10, 2), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    total_price = Column(Numeric(10, 2), nullable=False)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    payment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False)
+
+    amount = Column(Numeric(10, 2), nullable=False)
+    promptpay_payload = Column(Text, nullable=True)
+    qr_code = Column(Text, nullable=True)
+
+    payment_status = Column(String(30), nullable=False, default="waiting_payment")
+    paid_at = Column(BigInteger, nullable=True)
+
+    created_at = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=True)
+
+
+class StockMovement(Base):
+    __tablename__ = "stock_movements"
+
+    stock_movement_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.product_id"), nullable=False)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.variant_id"), nullable=True)
+
+    movement_type = Column(String(30), nullable=False)
+    quantity = Column(Integer, nullable=False)
+
+    before_stock = Column(Integer, nullable=False)
+    after_stock = Column(Integer, nullable=False)
+
+    ref_order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id"), nullable=True)
+    note = Column(Text, nullable=True)
+
+    created_by_id = Column(Integer, nullable=True)
+    created_by_name = Column(String(150), nullable=True)
+    created_at = Column(BigInteger, nullable=True)

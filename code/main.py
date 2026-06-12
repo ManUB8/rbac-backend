@@ -13,6 +13,10 @@ from routers.student_activity_router import router as student_activity
 from routers.admin_dashboard import router as admin_dashboard
 from routers.position_router import router as position_router
 from api.v2.students.router import router as student_router_v2
+from routers.shop.category import router as shop_category_router
+from routers.shop.product import router as shop_product_router
+from routers.shop.variant import router as shop_variant_router
+from routers.shop.cart import router as shop_cart_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,7 +60,10 @@ app.include_router(student_activity)
 app.include_router(admin_dashboard)
 app.include_router(position_router)
 app.include_router(student_router_v2)
-
+app.include_router(shop_category_router)
+app.include_router(shop_product_router)
+app.include_router(shop_variant_router)
+app.include_router(shop_cart_router)
 
 
 @app.get("/")
