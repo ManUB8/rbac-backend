@@ -47,6 +47,7 @@ class StudentActivityGetOneRequest(BaseModel):
 class StudentActivityUpdateRequest(BaseModel):
     student_activity_id: int
     activity_id: Optional[int] = None
+    attendance_status: Optional[str] = None
     updated_by_name: str
 
 

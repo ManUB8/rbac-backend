@@ -437,10 +437,6 @@ def add_activity_summary(target: dict, source: dict):
         target[key] += source[key]
 
 
-@router.get(
-    "/admin/activity/{activity_id}/year-faculty-major",
-    response_model=DashboardActivityYearBreakdownResponse
-)
 def get_activity_year_faculty_major_dashboard(
     activity_id: int,
     year_status: Optional[str] = Query(default=None),
@@ -896,10 +892,7 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get(
-    "/student/{student_id}",
-    response_model=StudentDashboardMessageResponse
-)
+@router.get("/student/{student_id}",response_model=StudentDashboardMessageResponse)
 def get_student_dashboard(
     student_id: int,
     db: Session = Depends(get_db)
@@ -1134,7 +1127,6 @@ def get_top_activity(db: Session):
 
     return activity_rank[0]
 
-@router.get("/admin/sum/{activity_id}", response_model=AdminStudentMessageResponse)
 def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     is_all_activity = activity_id == 0
     activity = get_activity_or_404(activity_id, db)
@@ -1193,6 +1185,8 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
         activity_id=activity_id
     )
 
+    total_student = count_all_students(db=db)
+
     selected_activity = None
     top_activity = None
 
@@ -1218,8 +1212,8 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
             "volunteer_hours_count_all": float(volunteer_hours_count_all or 0),
 
             "join_rate_percent": calc_percent(
-                joined_count,
-                joined_count + not_joined_count
+                student_count_all,
+                total_student
             ),
             "checkout_rate_percent": calc_percent(
                 checkout_count,
@@ -1238,7 +1232,6 @@ def get_admin_dashboard(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/admin/{activity_id}/activity-rank")
 def get_admin_activity_rank(activity_id: int, db: Session = Depends(get_db)):
     activity = get_activity_or_404(activity_id, db)
 
@@ -1271,7 +1264,6 @@ def get_admin_activity_rank(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/admin/{activity_id}/year-count")
 def get_admin_year_count(activity_id: int, db: Session = Depends(get_db)):
     get_activity_or_404(activity_id, db)
 
@@ -1304,24 +1296,28 @@ def get_admin_year_count(activity_id: int, db: Session = Depends(get_db)):
             year_status=year
         )
 
+        year_total_student = count_all_students(
+            db=db,
+            year_status=year
+        )
+
+        year_count_student = count_students(
+            db=db,
+            activity_id=activity_id,
+            year_status=year
+        )
+
         year_count.append({
             "name": year,
-            "total_student": count_all_students(
-                db=db,
-                year_status=year
-            ),
-            "count_student": count_students(
-                db=db,
-                activity_id=activity_id,
-                year_status=year
-            ),
+            "total_student": year_total_student,
+            "count_student": year_count_student,
             "joined_count": year_joined_count,
             "not_joined_count": year_not_joined_count,
             "checkin_count": year_checkin_count,
             "checkout_count": year_checkout_count,
             "join_rate_percent": calc_percent(
-                year_joined_count,
-                year_joined_count + year_not_joined_count
+                year_count_student,
+                year_total_student
             ),
         })
 
@@ -1331,7 +1327,6 @@ def get_admin_year_count(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/admin/{activity_id}/faculty-rank")
 def get_admin_faculty_rank(activity_id: int, db: Session = Depends(get_db)):
     get_activity_or_404(activity_id, db)
 
@@ -1364,7 +1359,6 @@ def get_admin_faculty_rank(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/admin/{activity_id}/major-rank")
 def get_admin_major_rank(activity_id: int, db: Session = Depends(get_db)):
     get_activity_or_404(activity_id, db)
 
@@ -1399,7 +1393,6 @@ def get_admin_major_rank(activity_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/admin/{activity_id}/faculty")
 def get_admin_faculty(activity_id: int, db: Session = Depends(get_db)):
     get_activity_or_404(activity_id, db)
 

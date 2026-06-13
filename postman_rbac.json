@@ -1,16 +1,59 @@
 {
   "info": {
     "name": "RBAC Activity API",
-    "description": "Generated from FastAPI OpenAPI routes. Review sample bodies before sending.",
+    "description": "RBAC Activity and Shop API collection. Select the deve or prod environment and review sample bodies before sending.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8000"
+      "value": "http://127.0.0.1:8000"
     }
   ],
   "item": [
+    {
+      "name": "Core",
+      "item": [
+        {
+          "name": "GET /",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [],
+              "query": [],
+              "variable": []
+            },
+            "description": "API root"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Health check"
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Faculty & Majors",
       "item": [
@@ -730,6 +773,35 @@
             "description": "Get All Student By Major"
           },
           "response": []
+        },
+        {
+          "name": "GET /student/v1/summary/year/{year_status}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v1/summary/year/:year_status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v1",
+                "summary",
+                "year",
+                ":year_status"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "year_status",
+                  "value": "ปี 1"
+                }
+              ]
+            },
+            "description": "Get student summary by year"
+          },
+          "response": []
         }
       ]
     },
@@ -762,7 +834,7 @@
             "description": "Create Activity",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"created_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"checkin_only\",\n  \"require_registration\": false,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 100\n}",
+              "raw": "{\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"target_group\": \"all\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"created_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"checkin_only\",\n  \"require_registration\": false,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 100\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -935,7 +1007,7 @@
             "description": "Update Activity",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"activity_id\": 1,\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"updated_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"\",\n  \"require_registration\": true,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 1\n}",
+              "raw": "{\n  \"activity_id\": 1,\n  \"activity_name\": \"\",\n  \"activity_date\": \"2026-05-30\",\n  \"target_group\": \"all\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"09:00\",\n  \"hours\": 1,\n  \"volunteer_hours\": 1,\n  \"location\": \"\",\n  \"description\": \"\",\n  \"activity_img\": \"\",\n  \"activity_status\": true,\n  \"checkin_open_time\": \"09:00\",\n  \"checkin_close_time\": \"09:00\",\n  \"checkout_open_time\": \"09:00\",\n  \"checkout_close_time\": \"09:00\",\n  \"updated_by_name\": \"\",\n  \"hour_type_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"check_type\": \"\",\n  \"require_registration\": true,\n  \"max_participants\": 1,\n  \"activity_lat\": 1,\n  \"activity_lng\": 1,\n  \"activity_radius_meter\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -978,6 +1050,133 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"activity_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /activity/v1/filter-by-date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/filter-by-date?activity_date=&start_date=2026-06-01&end_date=2026-06-30&target_group=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "filter-by-date"
+              ],
+              "query": [
+                {
+                  "key": "activity_date",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "start_date",
+                  "value": "2026-06-01",
+                  "disabled": false
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-06-30",
+                  "disabled": false
+                },
+                {
+                  "key": "target_group",
+                  "value": "all",
+                  "disabled": false
+                }
+              ],
+              "variable": []
+            },
+            "description": "Filter active activities by date range and target group"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /activity/v1/delete-status/{activity_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/delete-status/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "delete-status",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Set activity status to inactive without deleting student activity records",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": 1,\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /activity/v1/hard-delete/{activity_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity/v1/hard-delete/:activity_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity",
+                "v1",
+                "hard-delete",
+                ":activity_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "อันตราย: ลบกิจกรรมและ student activities ถาวร; endpoint ปัจจุบันยังไม่ได้ตรวจสิทธิ์ admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": 1,\n  \"updated_by_name\": \"{{adminName}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1873,6 +2072,259 @@
             "description": "Get Student Dashboard"
           },
           "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/activity/{activity_id}/year-faculty-major",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/activity/:activity_id/year-faculty-major?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                "activity",
+                ":activity_id",
+                "year-faculty-major"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get activity breakdown by year, faculty, and major; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/sum/{activity_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/sum/:activity_id?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                "sum",
+                ":activity_id"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get admin dashboard summary; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}/activity-rank",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id/activity-rank?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id",
+                "activity-rank"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get activity ranking; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}/year-count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id/year-count?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id",
+                "year-count"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get dashboard counts by year; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}/faculty-rank",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id/faculty-rank?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id",
+                "faculty-rank"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get faculty ranking; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}/major-rank",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id/major-rank?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id",
+                "major-rank"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get major ranking; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/v1/admin/{activity_id}/faculty",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/v1/admin/:activity_id/faculty?year_status={{yearStatus}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "v1",
+                "admin",
+                ":activity_id",
+                "faculty"
+              ],
+              "query": [
+                {
+                  "key": "year_status",
+                  "value": "{{yearStatus}}",
+                  "disabled": false,
+                  "description": "ปี 1, ปี 2, ปี 3 หรือ ปี 4; ปิด query เพื่อดูข้อมูลรวม"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "activity_id",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get faculty and major dashboard breakdown; รองรับ query year_status ตาม YEAR_STATUS_LIST"
+          },
+          "response": []
         }
       ]
     },
@@ -2591,6 +3043,1193 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"updated_by_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/summary/year/{year_status}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/summary/year/:year_status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "summary",
+                "year",
+                ":year_status"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "year_status",
+                  "value": "ปี 1"
+                }
+              ]
+            },
+            "description": "Get student summary by year"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/summary/year-code/{year_status}/{student_code_prefix}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/summary/year-code/:year_status/:student_code_prefix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "summary",
+                "year-code",
+                ":year_status",
+                ":student_code_prefix"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "year_status",
+                  "value": "ปี 1"
+                },
+                {
+                  "key": "student_code_prefix",
+                  "value": "66"
+                }
+              ]
+            },
+            "description": "Get student summary by year and student code prefix"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /student/v2/summary/code-prefix/{student_code_prefix}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student/v2/summary/code-prefix/:student_code_prefix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "v2",
+                "summary",
+                "code-prefix",
+                ":student_code_prefix"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_code_prefix",
+                  "value": "66"
+                }
+              ]
+            },
+            "description": "Get student summary by student code prefix"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Category",
+      "item": [
+        {
+          "name": "POST /shop/v1/admin/categories/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/categories/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "categories",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "สร้างหมวดหมู่สินค้า ต้องเป็น admin; แนะนำให้เปลี่ยนการยืนยันจากชื่อเป็น access token",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_name\": \"เสื้อและเครื่องแต่งกาย\",\n  \"created_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/categories/update/{category_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/categories/update/:category_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "categories",
+                "update",
+                ":category_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            },
+            "description": "แก้ชื่อหรือเปิด/ปิดหมวดหมู่",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_name\": \"สินค้าเครื่องแต่งกาย\",\n  \"is_active\": true,\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/get-all/categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/get-all/categories?active_only=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "get-all",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "active_only",
+                  "value": "true",
+                  "disabled": false
+                }
+              ],
+              "variable": []
+            },
+            "description": "ดึงหมวดหมู่สินค้า; ปิด active_only เพื่อดูรายการ inactive"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Product",
+      "item": [
+        {
+          "name": "POST /shop/v1/admin/products/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/products/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "products",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "สร้างสินค้าตัวอย่างแบบไม่มี variant; owner_type รองรับ club/faculty/major/external",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"เสื้อชมรม RBAC\",\n  \"description\": \"เสื้อกิจกรรมของชมรม\",\n  \"category_id\": \"{{categoryId}}\",\n  \"base_price\": 250,\n  \"base_stock\": 50,\n  \"owner_type\": \"club\",\n  \"faculty_id\": null,\n  \"major_id\": null,\n  \"external_name\": null,\n  \"main_image\": \"https://example.com/products/rbac-shirt.jpg\",\n  \"product_images\": [\n    \"https://example.com/products/rbac-shirt-front.jpg\",\n    \"https://example.com/products/rbac-shirt-back.jpg\"\n  ],\n  \"has_variant\": false,\n  \"is_active\": true,\n  \"is_limited\": true,\n  \"limit_per_student\": 2,\n  \"weight_gram\": 250,\n  \"created_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/products/update/{product_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/products/update/:product_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "products",
+                "update",
+                ":product_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "แก้ไขสินค้า; ระวังการสลับ has_variant เมื่อมีข้อมูล variant/cart/order แล้ว",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"เสื้อชมรม RBAC รุ่นใหม่\",\n  \"base_price\": 290,\n  \"base_stock\": 40,\n  \"is_active\": true,\n  \"is_limited\": true,\n  \"limit_per_student\": 2,\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/products?active_only=true&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "owner_type",
+                  "value": "club",
+                  "disabled": true
+                },
+                {
+                  "key": "faculty_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "major_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "is_limited",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "active_only",
+                  "value": "true",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ],
+              "variable": []
+            },
+            "description": "ค้นหาและ filter สินค้า พร้อม pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/products-first/{product_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/products-first/:product_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "products-first",
+                ":product_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "ดึงสินค้าแบบเดิมโดยไม่รวม variants"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/products/{product_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/products/:product_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "products",
+                ":product_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "ดึงสินค้า พร้อม variants, min/max price และ total stock"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Variant",
+      "item": [
+        {
+          "name": "POST /shop/v1/admin/products/{product_id}/variants/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/products/:product_id/variants/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "products",
+                ":product_id",
+                "variants",
+                "create"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "สร้าง variant และตั้ง has_variant ของสินค้าเป็น true",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_name\": \"XL\",\n  \"color_name\": \"ดำ\",\n  \"variant_image\": \"https://example.com/products/rbac-shirt-xl-black.jpg\",\n  \"sku_code\": \"RBAC-SHIRT-BLK-XL\",\n  \"price\": 290,\n  \"stock\": 20,\n  \"is_active\": true,\n  \"created_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/products/{product_id}/variants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/products/:product_id/variants?active_only=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "products",
+                ":product_id",
+                "variants"
+              ],
+              "query": [
+                {
+                  "key": "active_only",
+                  "value": "true",
+                  "disabled": false
+                }
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "ดึง variants ของสินค้า"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/variants/{variant_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/variants/:variant_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "variants",
+                ":variant_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "variant_id",
+                  "value": "{{variantId}}"
+                }
+              ]
+            },
+            "description": "แก้ไข variant; แนะนำเพิ่ม unique SKU ใน database",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_name\": \"XXL\",\n  \"color_name\": \"ดำ\",\n  \"price\": 320,\n  \"is_active\": true,\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/variants/{variant_id}/stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/variants/:variant_id/stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "variants",
+                ":variant_id",
+                "stock"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "variant_id",
+                  "value": "{{variantId}}"
+                }
+              ]
+            },
+            "description": "ปรับ stock; movement_type รองรับ increase/decrease/adjust",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movement_type\": \"increase\",\n  \"quantity\": 10,\n  \"note\": \"รับสินค้าเข้าคลัง\",\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Cart",
+      "item": [
+        {
+          "name": "GET /shop/v1/cart/{student_code}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/cart/:student_code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "cart",
+                ":student_code"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_code",
+                  "value": "{{studentCode}}"
+                }
+              ]
+            },
+            "description": "ดึงหรือสร้างตะกร้า; production ควรอ่าน student จาก token แทน path"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shop/v1/cart/add",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/cart/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "cart",
+                "add"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "เพิ่มสินค้าในตะกร้า; variant_id เป็น null สำหรับสินค้าที่ไม่มี variant",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"{{studentCode}}\",\n  \"product_id\": \"{{productId}}\",\n  \"variant_id\": null,\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/cart/item/{cart_item_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/cart/item/:cart_item_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "cart",
+                "item",
+                ":cart_item_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "cart_item_id",
+                  "value": "{{cartItemId}}"
+                }
+              ]
+            },
+            "description": "ตั้งจำนวนรวมของรายการ โดย student_code ต้องเป็นเจ้าของตะกร้า",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"{{studentCode}}\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /shop/v1/cart/item/{cart_item_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/cart/item/:cart_item_id?student_code={{studentCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "cart",
+                "item",
+                ":cart_item_id"
+              ],
+              "query": [
+                {
+                  "key": "student_code",
+                  "value": "{{studentCode}}",
+                  "disabled": false
+                }
+              ],
+              "variable": [
+                {
+                  "key": "cart_item_id",
+                  "value": "{{cartItemId}}"
+                }
+              ]
+            },
+            "description": "ลบรายการ โดย student_code ต้องเป็นเจ้าของตะกร้า"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /shop/v1/cart/clear/{student_code}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/cart/clear/:student_code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "cart",
+                "clear",
+                ":student_code"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_code",
+                  "value": "{{studentCode}}"
+                }
+              ]
+            },
+            "description": "ล้างตะกร้าของนิสิต"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Order",
+      "item": [
+        {
+          "name": "POST /shop/v1/orders/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/orders/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "orders",
+                "create"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "สร้าง order จากตะกร้า ตัวอย่างแบบ shipping; เปลี่ยน delivery_type เป็น pickup และตั้งข้อมูลผู้รับเป็น null ได้",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"{{studentCode}}\",\n  \"delivery_type\": \"shipping\",\n  \"receiver_name\": \"สมชาย ใจดี\",\n  \"receiver_phone\": \"0812345678\",\n  \"shipping_address\": \"123 ถนนสุขุมวิท กรุงเทพมหานคร 10110\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/orders/my/{student_code}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/orders/my/:student_code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "orders",
+                "my",
+                ":student_code"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "student_code",
+                  "value": "{{studentCode}}"
+                }
+              ]
+            },
+            "description": "ประวัติ order ของนิสิต; production ควรตรวจสิทธิ์จาก token"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/orders/{order_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/orders/:order_id?student_code={{studentCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "orders",
+                ":order_id"
+              ],
+              "query": [
+                {
+                  "key": "student_code",
+                  "value": "{{studentCode}}",
+                  "disabled": false
+                }
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "ดึงรายละเอียด order โดยตรวจ student_code ว่าเป็นเจ้าของ"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/orders/{order_id}/cancel",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/orders/:order_id/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "orders",
+                ":order_id",
+                "cancel"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "เจ้าของยกเลิก order ที่ยังไม่ชำระเงิน ระบบคืน stock ลด sold_count และสร้าง cancel_return",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_code\": \"{{studentCode}}\",\n  \"reason\": \"เปลี่ยนใจไม่รับสินค้า\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Admin Order",
+      "item": [
+        {
+          "name": "POST /shop/v1/admin/orders/get-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/orders/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "orders",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "ค้นหา/filter order สำหรับ admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"student_code\": \"\",\n  \"order_status\": \"\",\n  \"payment_status\": \"\",\n  \"delivery_type\": \"\",\n  \"page\": 1,\n  \"limit\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /shop/v1/admin/orders/{order_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/orders/:order_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "orders",
+                ":order_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "Admin ดึงรายละเอียด order"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/orders/payment/{order_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/orders/payment/:order_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "orders",
+                "payment",
+                ":order_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "Admin ยืนยันการชำระเงิน; ควรมี transaction reference หรือ payment webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/orders/status/{order_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/orders/status/:order_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "orders",
+                "status",
+                ":order_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "เปลี่ยนสถานะ order; เมื่อส่ง cancelled ระบบคืน stock และสร้าง cancel_return โดย order ที่ paid ต้องคืนเงินก่อน",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_status\": \"preparing\",\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /shop/v1/admin/orders/shipping/{order_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/orders/shipping/:order_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "orders",
+                "shipping",
+                ":order_id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "บันทึกข้อมูลจัดส่ง ใช้ได้เฉพาะ delivery_type=shipping และ payment_status=paid",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrier\": \"ไปรษณีย์ไทย\",\n  \"tracking_no\": \"TH1234567890\",\n  \"updated_by_name\": \"{{adminName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shop Dashboard & Stock",
+      "item": [
+        {
+          "name": "GET /shop/v1/admin/dashboard/summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/dashboard/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "dashboard",
+                "summary"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "สรุปยอดขายตามเวลา Asia/Bangkok, สถานะ order, stock ต่ำ, สินค้าขายดี และ order ล่าสุด"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shop/v1/admin/stock-movements/get-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shop/v1/admin/stock-movements/get-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "v1",
+                "admin",
+                "stock-movements",
+                "get-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "ค้นหาประวัติ stock; movement_type รองรับ increase/decrease/sale/cancel_return/adjust",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"\",\n  \"variant_id\": \"\",\n  \"movement_type\": \"\",\n  \"search\": \"\",\n  \"page\": 1,\n  \"limit\": 20\n}",
               "options": {
                 "raw": {
                   "language": "json"

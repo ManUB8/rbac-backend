@@ -355,29 +355,31 @@ class ActivityFilterAllResponse(BaseModel):
     activity_status: List[FilterOption]
     require_registration: List[FilterOption]
 
-
-
-
 class ActivityFilterByDateItemResponse(BaseModel):
     activity_id: int
     activity_name: str
     activity_date: date
     start_time: time
     end_time: time
+
     location: Optional[str] = None
     check_type: str
-    target_group: str
+    target_group: Optional[str] = None
+
+    activity_lat: Optional[float] = None
+    activity_lng: Optional[float] = None
+    activity_radius_meter: Optional[int] = None
+
     require_registration: bool
     max_participants: Optional[int] = None
     registered_count: int = 0
     register_text: Optional[str] = None
     is_full: bool = False
-
+    
     @field_serializer("start_time", "end_time")
     def serialize_time(self, value: time):
         return value.strftime("%H.%M")
 
-
 class ActivityFilterByDateResponse(BaseModel):
     detail: str
-    data: List[ActivityFilterByDateItemResponse]
+    data: list[ActivityFilterByDateItemResponse]

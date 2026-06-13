@@ -16,6 +16,20 @@ Backend นี้เป็น FastAPI สำหรับระบบจัดก
 - ตำแหน่งนิสิต: ตำแหน่งปัจจุบันและประวัติตำแหน่งของนิสิต
 - Dashboard: สรุปข้อมูลสำหรับ admin และ student
 - Upload: อัปโหลดรูปกิจกรรมและรูปนิสิตไป Cloudflare R2
+- Shop: หมวดหมู่สินค้า สินค้า ตัวเลือกสินค้า ตะกร้า คำสั่งซื้อ PromptPay QR การจัดส่ง Dashboard และประวัติ stock
+
+## สรุปสิ่งที่เพิ่มล่าสุด
+
+- จัดโครงสร้าง Student v2 ใหม่ไว้ใน `code/api/v2/students` โดยแยก router, service, repository, interfaces, serializers และ dependencies
+- เพิ่ม API สรุปจำนวนนิสิตตามชั้นปีและ prefix ของรหัสนิสิต
+- เพิ่ม `target_group` ให้กิจกรรม โดยรองรับ `all`, `freshman` และ `senior`
+- จำกัดกิจกรรมที่นิสิตมองเห็น ลงทะเบียน เช็คอิน และเช็คเอาต์ตาม `year_status`
+- เพิ่ม API filter กิจกรรมตามวันที่ ช่วงวันที่ และกลุ่มเป้าหมาย
+- เพิ่ม Dashboard สรุปกิจกรรมแบบแยกชั้นปี คณะ และสาขา พร้อมจำนวนและอัตราการเข้าร่วม
+- เมื่อแก้ `volunteer_hours` หรือช่วงเวลา scan ระบบจะคำนวณ `earned_hours`, `checkin_status` และ `checkout_status` ของรายการเดิมใหม่
+- ปรับสิทธิ์ admin หลักให้เช็คอินก่อนเวลาได้ โดยบันทึกเป็นสถานะ valid ตาม logic ปัจจุบัน ส่วน temporary admin ยังต้องอยู่ในช่วงเวลา
+- เพิ่ม migration `migrations/20260606_add_activity_target_group.sql`
+- เพิ่มระบบ Shop ภายใต้ prefix `/shop/v1` พร้อมการจำกัดสินค้าต่อคน ตัด stock ตอนสร้าง order และสร้าง PromptPay QR
 
 ## Tech Stack
 
@@ -27,6 +41,7 @@ Backend นี้เป็น FastAPI สำหรับระบบจัดก
 - Pydantic
 - python-dotenv
 - boto3 สำหรับ Cloudflare R2
+- qrcode/Pillow สำหรับสร้าง PromptPay QR แบบ base64
 - Docker / Docker Compose
 
 ## โครงสร้างไฟล์
@@ -50,10 +65,33 @@ Backend นี้เป็น FastAPI สำหรับระบบจัดก
     │   ├── faculty_major_router.py
     │   ├── student_register_router.py
     │   ├── activity_router.py
+    │   ├── activity
+    │   │   ├── get.py
+    │   │   ├── post.py
+    │   │   ├── patch.py
+    │   │   ├── delete.py
+    │   │   └── helpers.py
     │   ├── student_activity_router.py
+    │   ├── student_activity
+    │   │   ├── get.py
+    │   │   ├── post.py
+    │   │   ├── patch.py
+    │   │   ├── delete.py
+    │   │   └── helpers.py
     │   ├── admin_dashboard.py
+    │   ├── admin_dashboard_report.py
     │   ├── position_router.py
-    │   └── upload_router.py
+    │   ├── upload_router.py
+    │   └── shop
+    │       ├── category.py
+    │       ├── product.py
+    │       ├── variant.py
+    │       ├── cart.py
+    │       ├── order.py
+    │       ├── payment_qr.py
+    │       ├── admin_order.py
+    │       ├── dashboard.py
+    │       └── stock.py
     ├── schemas
     │   ├── schemas_user.py
     │   ├── schemas_student.py
@@ -61,9 +99,21 @@ Backend นี้เป็น FastAPI สำหรับระบบจัดก
     │   ├── schemas_activity.py
     │   ├── schemas_student_activity.py
     │   ├── schemas_admin_dashboard.py
+    │   ├── schemas_shop.py
     │   └── schemas_position.py
-    └── service
-        └── student_router_v2.py
+    └── api
+        └── v2
+            └── students
+                ├── router.py
+                ├── service.py
+                ├── repository.py
+                ├── interfaces.py
+                ├── serializers.py
+                └── dependencies.py
+└── migrations
+    ├── 20260606_add_activity_target_group.sql
+    ├── 20260613_add_shop_tables.sql
+    └── 20260613_harden_shop_constraints_indexes.sql
 ```
 
 หมายเหตุ: โฟลเดอร์ `__pycache__` เป็นไฟล์ runtime ของ Python ไม่ใช่ source หลักของระบบ
@@ -74,8 +124,9 @@ Backend นี้เป็น FastAPI สำหรับระบบจัดก
 | --- | --- |
 | `code/main.py` | สร้าง FastAPI app, ตั้งค่า CORS, create table ด้วย SQLAlchemy, include router ทั้งหมด, มี root และ health check |
 | `code/database.py` | โหลด `.env`, สร้าง `engine`, `SessionLocal`, `Base`, และ dependency `get_db()` |
-| `code/models.py` | SQLAlchemy models ทั้งหมด เช่น User, Student, Faculty, Major, Activity, StudentActivity, Position, StudentPosition, ActivityHourType |
+| `code/models.py` | SQLAlchemy models ทั้งหมด รวม Activity และ Shop |
 | `code/r2_service.py` | อัปโหลด/ลบไฟล์บน Cloudflare R2 ตรวจชนิดไฟล์และขนาดสูงสุด 5 MB |
+| `code/routers/shop/payment_qr.py` | สร้าง Thai PromptPay payload และ QR PNG แบบ base64 |
 | `code/requirements.txt` | dependency ของ backend |
 | `Dockerfile` | build Python image และรัน Uvicorn ที่ port 8000 |
 | `docker-compose.yaml` | service `rbac-backend`, map port `8000:8000`, โหลด env จาก `.env`, mount `./code:/app/code` |
@@ -92,6 +143,7 @@ R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
 R2_BUCKET_NAME=...
 R2_PUBLIC_BASE_URL=...
+PROMPTPAY_ID=0812345678
 ```
 
 ข้อควรระวัง:
@@ -163,6 +215,10 @@ URL สำคัญ:
 - รองรับการลงทะเบียนล่วงหน้าด้วย `require_registration`
 - จำกัดจำนวนผู้เข้าร่วมด้วย `max_participants`
 - รองรับพิกัดกิจกรรมและ radius สำหรับเช็คอิน/เช็คเอาต์
+- รองรับ `target_group`
+  - `all`: ทุกชั้นปี
+  - `freshman`: เฉพาะ `ปี 1`
+  - `senior`: เฉพาะ `ปี 2`, `ปี 3`, `ปี 4`
 
 ### StudentActivity
 
@@ -190,6 +246,25 @@ URL สำคัญ:
 
 - เก็บประเภทชั่วโมงกิจกรรม
 - primary key เป็น UUID
+
+### Shop
+
+ตารางหลักคือ `product_categories`, `products`, `product_variants`, `carts`, `cart_items`, `orders`, `order_items`, `payments` และ `stock_movements`
+
+- สินค้าเป็นของ `club`, `faculty`, `major` หรือ `external`
+- สินค้ารองรับแบบราคา/stock หลัก หรือแยกตาม variant
+- สินค้า Limited ใช้ `limit_per_student` จำกัดยอดซื้อต่อคน
+- ตะกร้าหนึ่งใบต่อหนึ่งนิสิต และมีหลายรายการสินค้า
+- ตอนสร้าง order ระบบ snapshot ชื่อ/ราคา ลด stock เพิ่ม `sold_count` สร้าง stock movement และล้างตะกร้า
+- Payment เก็บ PromptPay payload และ QR code แบบ data URI
+- Order รองรับรับเอง (`pickup`) และจัดส่ง (`shipping`)
+
+สถานะสำคัญ:
+
+- `owner_type`: `club`, `faculty`, `major`, `external`
+- `order_status`: `pending_payment`, `paid`, `preparing`, `ready_for_pickup`, `shipping`, `completed`, `cancelled`
+- `payment_status`: `waiting_payment`, `paid`, `rejected`, `expired`, `cancelled`
+- `movement_type`: `increase`, `decrease`, `sale`, `cancel_return`, `adjust`
 
 ## Flow การทำงานหลัก
 
@@ -259,7 +334,8 @@ Flow:
 2. validate เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด
 3. validate `max_participants`, radius, latitude, longitude
 4. ตรวจว่า `hour_type_id` มีจริง
-5. สร้าง activity พร้อมข้อมูล check type, registration, location และ audit fields
+5. ตรวจ `target_group` ว่าเป็น `all`, `freshman` หรือ `senior`
+6. สร้าง activity พร้อมข้อมูล check type, registration, location และ audit fields
 
 ### 6. แสดงกิจกรรมให้ student
 
@@ -281,11 +357,12 @@ Flow:
 
 1. หา student จาก `student_code`
 2. หา activity จาก `activity_id`
-3. ต้องเป็นกิจกรรมที่ `require_registration == true`
-4. ห้ามลงทะเบียนซ้ำ
-5. ถ้ามี `max_participants` ต้องยังไม่เต็ม
-6. สร้าง `StudentActivity` โดย status เริ่มต้นเป็น `ไม่เข้าร่วม`
-7. เก็บ `registered_at`
+3. ตรวจว่านิสิตอยู่ใน `target_group` ของกิจกรรม
+4. ต้องเป็นกิจกรรมที่ `require_registration == true`
+5. ห้ามลงทะเบียนซ้ำ
+6. ถ้ามี `max_participants` ต้องยังไม่เต็ม
+7. สร้าง `StudentActivity` โดย status เริ่มต้นเป็น `ไม่เข้าร่วม`
+8. เก็บ `registered_at`
 
 ### 8. Check-in
 
@@ -299,7 +376,7 @@ Flow:
 4. validate ระยะจากพิกัดที่ส่งมากับพิกัดกิจกรรม
 5. ใช้เวลาจาก server เทียบกับ `checkin_open_time` และ `checkin_close_time`
 6. `temporary_admin` เช็คอินได้เฉพาะในช่วงเวลา scan
-7. `admin` หลักเช็คอินนอกเวลาได้เพื่อบันทึกว่านิสิตมา แต่ `checkin_status` จะเป็น `manual`
+7. `admin` หลักเช็คอินก่อนเวลาเปิดได้และบันทึกเป็น `valid`; ถ้าเช็คอินหลังเวลาปิดจะบันทึกเป็น `manual`
 8. ถ้ากิจกรรมต้องลงทะเบียน ต้องมี record เดิมก่อน
 9. ห้ามเช็คอินซ้ำ
 10. ถ้ายังไม่มี record และกิจกรรมไม่บังคับลงทะเบียน จะสร้าง `StudentActivity` ให้
@@ -329,13 +406,19 @@ Flow:
 - `checkin_only`: ได้ `volunteer_hours` เมื่อ `checkin_status == valid`
 - `checkout_only`: ได้ `volunteer_hours` เมื่อ `checkout_status == valid`
 - `checkin_checkout`: ถ้า valid ทั้ง check-in และ check-out ได้เต็ม, ถ้า valid อย่างเดียวได้ครึ่ง, ถ้าไม่ valid เลยได้ 0
-- ถ้า admin หลัก scan นอกเวลา status จะเป็น `manual` เพื่อบันทึกว่านิสิตมา แต่ไม่นับเป็น valid สำหรับชั่วโมงเต็ม
+- สถานะ `manual` ไม่นับเป็น valid สำหรับชั่วโมงเต็ม โดย check-in ก่อนเวลาเปิดของ admin หลักเป็นข้อยกเว้นที่ logic ปัจจุบันบันทึกเป็น `valid`
 
 ### 11. Dashboard
 
 Endpoint prefix: `/dashboard/v1`
 
 - `GET /dashboard/v1/admin/{activity_id}` สำหรับภาพรวมกิจกรรมในฝั่ง admin
+- `code/routers/admin_dashboard.py` เก็บเส้น dashboard รุ่นเดิมและ student dashboard
+- `code/routers/admin_dashboard_report.py` เก็บ 7 เส้นรายงาน admin รุ่นใหม่
+- ทุกเส้นในไฟล์ report รองรับ query `year_status` ได้แก่ `ปี 1`, `ปี 2`, `ปี 3`, `ปี 4`
+- ไม่ส่ง `year_status` หมายถึงข้อมูลรวมทุกชั้นปี
+- `GET /dashboard/v1/admin/activity/{activity_id}/year-faculty-major` แสดงชั้นปี > คณะ > สาขา เพื่อดูว่านิสิตแต่ละกลุ่มเข้ากิจกรรมกี่คน
+- `join_rate_percent` ของ report คำนวณจาก `count_student / total_student * 100`
 - `GET /dashboard/v1/student/{student_id}` สำหรับภาพรวมกิจกรรมของ student
 
 ### 12. Upload รูป
@@ -354,6 +437,30 @@ Flow:
 5. สร้างชื่อไฟล์จาก UUID
 6. อัปโหลดไป Cloudflare R2
 7. คืน `file_name`, `object_key`, `file_url`, `content_type`, `size`
+
+### 13. Shop Order
+
+Endpoint: `POST /shop/v1/orders/create`
+
+Flow:
+
+1. หานิสิตจาก `student_code` และโหลดรายการจากตะกร้า
+2. ตรวจสถานะสินค้า variant ราคา stock และข้อจำกัด Limited
+3. สร้าง order และ snapshot รายละเอียดสินค้าใน `order_items`
+4. ลด stock และเพิ่ม `sold_count`
+5. สร้าง `stock_movements` ประเภท `sale`
+6. สร้าง PromptPay payload และ QR code ตามยอดรวม
+7. ล้างสินค้าออกจากตะกร้า
+
+การสร้าง order ใช้ row lock กับ cart, cart item, product และ variant เพื่อป้องกันการตัด stock ซ้อนกัน
+
+การยกเลิก:
+
+- `PATCH /shop/v1/orders/{order_id}/cancel`
+- ตรวจ `student_code` ว่าเป็นเจ้าของ order
+- ยกเลิกได้เมื่อยังไม่ชำระเงินและ order ยังไม่ completed
+- คืน stock ลด `sold_count` และสร้าง movement `cancel_return`
+- เปลี่ยน order/payment status เป็น `cancelled` ใน transaction เดียวกัน
 
 ## Endpoint Summary
 
@@ -412,6 +519,7 @@ Flow:
 | GET | `/student/v1/get-one/{student_id}` | ดึงนิสิตรายคน |
 | GET | `/student/v1/get-all/major/{faculty_id}` | ดึงสาขาตามคณะพร้อมจำนวนนิสิต |
 | GET | `/student/v1/get-all/student-major/{major_id}` | ดึงนิสิตตามสาขา |
+| GET | `/student/v1/summary/year/{year_status}` | สรุปจำนวนนิสิตตามชั้นปี คณะ และสาขา |
 
 ### Student v2
 
@@ -429,6 +537,9 @@ Flow:
 | POST | `/student/v2/get-all/filter` | filter นิสิตแบบ POST พร้อม `year_status_summary` จากนิสิตทั้งหมด |
 | GET | `/student/v2/get-all/filter` | filter นิสิตแบบ GET พร้อม `year_status_summary` จากนิสิตทั้งหมด |
 | DELETE | `/student/v2/admin/delete-all-students` | ลบนิสิตทั้งหมด |
+| GET | `/student/v2/summary/year/{year_status}` | สรุปนิสิตตามชั้นปี |
+| GET | `/student/v2/summary/year-code/{year_status}/{student_code_prefix}` | สรุปนิสิตตามชั้นปีและรหัสขึ้นต้น |
+| GET | `/student/v2/summary/code-prefix/{student_code_prefix}` | สรุปนิสิตตามรหัสขึ้นต้น |
 
 ### Activity
 
@@ -442,6 +553,9 @@ Flow:
 | DELETE | `/activity/v1/delete/{activity_id}` | ปิดหรือลบกิจกรรมตาม logic เดิม |
 | GET | `/activity/v1/filter-info` | ข้อมูล filter สำหรับ admin |
 | GET | `/activity/v1/filter-all` | filter options ทั้งหมด |
+| GET | `/activity/v1/filter-by-date` | กรองกิจกรรมด้วย `activity_date`, `start_date`, `end_date`, `target_group` |
+| DELETE | `/activity/v1/delete-status/{activity_id}` | ปิดสถานะกิจกรรมโดยไม่ลบข้อมูลการเข้าร่วม |
+| DELETE | `/activity/v1/hard-delete/{activity_id}` | ลบกิจกรรมและข้อมูลการเข้าร่วมออกจากฐานข้อมูลถาวร |
 
 ### Student Activity
 
@@ -481,6 +595,13 @@ Flow:
 | Method | Path | หน้าที่ |
 | --- | --- | --- |
 | GET | `/dashboard/v1/admin/{activity_id}` | dashboard สำหรับ admin ตามกิจกรรม |
+| GET | `/dashboard/v1/admin/activity/{activity_id}/year-faculty-major?year_status=ปี 1` | สรุปกิจกรรมแยกชั้นปี คณะ และสาขา |
+| GET | `/dashboard/v1/admin/sum/{activity_id}?year_status=ปี 1` | ข้อมูล summary ของ dashboard |
+| GET | `/dashboard/v1/admin/{activity_id}/activity-rank?year_status=ปี 1` | อันดับกิจกรรม |
+| GET | `/dashboard/v1/admin/{activity_id}/year-count?year_status=ปี 1` | สรุปตามชั้นปี; ไม่ส่ง query จะคืนทุกปี |
+| GET | `/dashboard/v1/admin/{activity_id}/faculty-rank?year_status=ปี 1` | อันดับคณะของชั้นปีที่เลือก |
+| GET | `/dashboard/v1/admin/{activity_id}/major-rank?year_status=ปี 1` | อันดับสาขาของชั้นปีที่เลือก |
+| GET | `/dashboard/v1/admin/{activity_id}/faculty?year_status=ปี 1` | สรุปคณะพร้อมสาขาของชั้นปีที่เลือก |
 | GET | `/dashboard/v1/student/{student_id}` | dashboard สำหรับ student |
 
 ### Upload
@@ -490,6 +611,83 @@ Flow:
 | POST | `/upload/v1/image-activities` | อัปโหลดรูปกิจกรรม |
 | POST | `/upload/v1/student-image` | อัปโหลดรูปนิสิต |
 
+### Shop Category
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| POST | `/shop/v1/admin/categories/create` | Admin สร้างหมวดหมู่ |
+| PATCH | `/shop/v1/admin/categories/update/{category_id}` | Admin แก้ชื่อหรือสถานะหมวดหมู่ |
+| GET | `/shop/v1/get-all/categories` | ดึงหมวดหมู่ ใช้ `active_only` กรองได้ |
+
+### Shop Product & Variant
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| POST | `/shop/v1/admin/products/create` | Admin สร้างสินค้า |
+| PATCH | `/shop/v1/admin/products/update/{product_id}` | Admin แก้ไขสินค้า |
+| GET | `/shop/v1/products` | ค้นหา/filter/pagination สินค้า |
+| GET | `/shop/v1/products-first/{product_id}` | ดึงข้อมูลสินค้าโดยไม่รวม variant |
+| GET | `/shop/v1/products/{product_id}` | ดึงสินค้า พร้อม variant และช่วงราคา/stock รวม |
+| POST | `/shop/v1/admin/products/{product_id}/variants/create` | สร้าง variant |
+| GET | `/shop/v1/products/{product_id}/variants` | ดึง variant ของสินค้า |
+| PATCH | `/shop/v1/admin/variants/{variant_id}` | แก้ไข variant |
+| PATCH | `/shop/v1/admin/variants/{variant_id}/stock` | เพิ่ม ลด หรือตั้ง stock พร้อมบันทึก movement |
+
+### Shop Cart & Order
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/shop/v1/cart/{student_code}` | ดึงหรือสร้างตะกร้าของนิสิต |
+| POST | `/shop/v1/cart/add` | เพิ่มสินค้าในตะกร้า |
+| PATCH | `/shop/v1/cart/item/{cart_item_id}` | แก้จำนวนสินค้า โดย body ต้องมี `student_code` เจ้าของตะกร้า |
+| DELETE | `/shop/v1/cart/item/{cart_item_id}` | ลบรายการ โดยส่ง query `student_code` เพื่อตรวจเจ้าของ |
+| DELETE | `/shop/v1/cart/clear/{student_code}` | ล้างตะกร้า |
+| POST | `/shop/v1/orders/create` | สร้าง order จากตะกร้าและสร้าง PromptPay QR |
+| GET | `/shop/v1/orders/my/{student_code}` | ดึงประวัติ order ของนิสิต |
+| GET | `/shop/v1/orders/{order_id}` | ดึงรายละเอียด order โดยส่ง query `student_code` |
+| PATCH | `/shop/v1/orders/{order_id}/cancel` | เจ้าของยกเลิก order และคืน stock |
+
+### Shop Admin
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| POST | `/shop/v1/admin/orders/get-all` | ค้นหา/filter/pagination order |
+| GET | `/shop/v1/admin/orders/{order_id}` | Admin ดึงรายละเอียด order |
+| PATCH | `/shop/v1/admin/orders/payment/{order_id}` | ยืนยันการชำระเงิน |
+| PATCH | `/shop/v1/admin/orders/status/{order_id}` | เปลี่ยนสถานะ order |
+| PATCH | `/shop/v1/admin/orders/shipping/{order_id}` | บันทึกขนส่งและเลขติดตาม |
+| GET | `/shop/v1/admin/dashboard/summary` | Dashboard ยอดขาย order stock ต่ำ และสินค้าขายดี |
+| POST | `/shop/v1/admin/stock-movements/get-all` | ค้นหาประวัติการเคลื่อนไหว stock |
+
+## ข้อเสนอแนะสำหรับ Shop API
+
+| กลุ่มเส้น | ข้อเสนอแนะ |
+| --- | --- |
+| ทุกเส้น Admin | ใช้ access token และตรวจ role จาก token เพราะชื่อปลอมได้และชื่ออาจซ้ำ |
+| Admin Read APIs | `/admin/orders/get-all`, `/admin/orders/{id}`, `/admin/dashboard/summary` และ `/admin/stock-movements/get-all` ยังไม่มีการตรวจ admin |
+| Product/Category List | แยก public/admin endpoint เพราะผู้ใช้ทั่วไปส่ง `active_only=false` เพื่อดูข้อมูล inactive ได้ |
+| Cart และ My Orders | เพิ่ม ownership check ด้วย `student_code` แล้ว แต่ยังควรอ่าน student จาก token เมื่อทำข้อ 1 เพื่อกันการปลอมรหัสนิสิต |
+| `GET /orders/{order_id}` | ตรวจ ownership ด้วย `student_code` แล้ว; token ยังเป็นขั้นถัดไป |
+| Create Order | ใช้ row lock (`SELECT ... FOR UPDATE`) ตอนตรวจ/ลด stock แล้ว |
+| Create Order | ทำ `order_no` ให้ collision-safe ด้วย UUID/sequence หรือ retry เมื่อ unique conflict |
+| Cancel Order | เพิ่ม endpoint และเชื่อม admin cancellation ให้คืน stock ลด `sold_count` และสร้าง `cancel_return` แล้ว; order ที่ paid ต้องทำ refund flow ก่อน |
+| Confirm Payment | รองรับหลักฐาน/transaction reference และ webhook จาก payment provider แทนการกดยืนยันด้วยชื่อ admin อย่างเดียว |
+| Shipping | ตรวจ `payment_status == paid`, บังคับ carrier/tracking ตาม requirement และจำกัด transition จากสถานะที่อนุญาต |
+| Order Status | ทำ state machine เพื่อห้าม transition ย้อนกลับหรือข้ามขั้น เช่น `completed -> preparing` |
+| PromptPay | ใช้ environment variable `PROMPTPAY_ID` แล้ว ต้องตั้งค่าในแต่ละ environment ก่อนสร้าง order |
+| Payment | เพิ่ม unique constraint/index ที่ `payments.order_id` ผ่าน model และ migration แล้ว |
+| Product/Variant | เพิ่ม unique constraint สำหรับ SKU และ `(product_id, variant_name, color_name)` แล้ว |
+| Product Update | ป้องกันการสลับ `has_variant` ขณะมี variant/cart/order ที่เกี่ยวข้อง หรือกำหนด migration flow ให้ชัด |
+| Base Stock | เพิ่ม endpoint ปรับ `base_stock` ที่สร้าง stock movement เพราะปัจจุบันแก้ผ่าน product update ได้โดยไม่มีประวัติ |
+| Stock Filter | จับ UUID ที่ไม่ถูกต้องแล้วคืน HTTP 400 แทน exception 500 |
+| Dashboard | เพิ่ม query ช่วงวันที่/timezone และ index สำหรับ status/created_at เมื่อข้อมูลโต |
+
+Migration สำหรับ hardening Shop:
+
+```bash
+psql "$DATABASE_URL" -f migrations/20260613_harden_shop_constraints_indexes.sql
+```
+
 ## กติกาและเงื่อนไขสำคัญที่ควรรักษาไว้
 
 - Admin ที่สร้าง/แก้ไขข้อมูลหลายจุดถูกอ้างด้วย `created_by_name` หรือ `updated_by_name`
@@ -498,17 +696,24 @@ Flow:
 - เวลา activity รองรับ input แบบ `HH.MM` หรือ `HH:MM` ใน schema บางจุด และ response serialize เป็น `HH.MM`
 - `year_status` ที่ถูกต้องคือ `ปี 1`, `ปี 2`, `ปี 3`, `ปี 4`, `บัณฑิต`
 - `check_type` ที่ถูกต้องคือ `checkin_only`, `checkout_only`, `checkin_checkout`
+- `target_group` ที่ถูกต้องคือ `all`, `freshman`, `senior`
+- นิสิต `ปี 1` เห็นกลุ่ม `all` และ `freshman`; นิสิต `ปี 2` ถึง `ปี 4` เห็นกลุ่ม `all` และ `senior`; ค่าอื่นเห็นเฉพาะ `all`
 - การเช็คอิน/เช็คเอาต์ต้องอยู่ในรัศมีกิจกรรม ถ้ากิจกรรมมีพิกัด
 - ถ้า `require_registration` เป็น true ต้องลงทะเบียนก่อน check-in
 - ถ้ามี `max_participants` ต้องไม่ให้ลงทะเบียนเกินจำนวน
 - `student_id + activity_id` ห้ามซ้ำใน `student_activities`
 - การสร้างตำแหน่งใหม่ให้นิสิตจะปิดตำแหน่งปัจจุบันเดิม
 - `temporary_admin` login admin ได้ แต่ scan ได้เฉพาะในช่วงเวลา check-in/check-out ของกิจกรรม
-- `admin` หลัก scan นอกเวลาได้เพื่อบันทึกว่า “มาสาย” หรือ “เช็คเอาท์นอกเวลา”
+- `admin` หลัก scan นอกเวลาได้ โดย check-in ก่อนเวลาเปิดเป็น `valid` ตาม logic ปัจจุบัน ส่วนการ scan หลังเวลาปิดหรือกรณีนอกเวลาที่ไม่เข้าเงื่อนไข valid จะเป็น `manual`
 
 ## Postman Collection
 
-ไฟล์ `postman_rbac.json` เป็น Postman collection ที่ generate จาก FastAPI routes ปัจจุบัน มีตัวแปร `baseUrl` ค่าเริ่มต้นเป็น `http://localhost:8000` และมี request body ตัวอย่างสำหรับ endpoint ที่ต้องส่ง body
+ไฟล์ `postman_rbac.json` เป็น Postman collection ที่สรุป FastAPI routes ปัจจุบัน ทุก URL ใช้รูปแบบ `{{baseUrl}}/...` และมี body/query/path variable ตัวอย่าง
+
+Postman environments:
+
+- `postman_environment_deve.json`: `baseUrl = http://127.0.0.1:8000`
+- `postman_environment_prod.json`: `baseUrl = https://api.rbac-activity.com`
 
 ข้อควรระวัง: ค่าใน body เป็น placeholder ต้องเปลี่ยนเป็นข้อมูลจริงก่อนยิงทดสอบ
 
@@ -533,6 +738,7 @@ Flow:
 - ถ้าแก้ auth/password ควรวางแผน migrate password เดิม เพราะตอนนี้เช็ค plain text
 - ถ้าแก้ upload ต้องคงข้อจำกัดชนิดไฟล์และขนาดไว้ เว้นแต่มี requirement ใหม่
 - ถ้าแก้ delete flow ให้เช็ค `DELETE_ALLOWED_ADMIN_NAMES` และ audit fields เดิม
+- `DELETE /activity/v1/hard-delete/{activity_id}` เป็น destructive endpoint และโค้ดปัจจุบันยังไม่ได้ตรวจ admin จึงไม่ควรเปิดให้ public เรียก
 
 ## บันทึกเงื่อนไขเพิ่มเติม
 
