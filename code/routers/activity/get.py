@@ -246,7 +246,6 @@ def get_activity_filter_all(db: Session = Depends(get_db)):
     }
 
 
-
 @router.get("/filter-by-date", response_model=ActivityFilterByDateResponse)
 def get_activity_filter_by_date(
     activity_date: Optional[date] = Query(default=None),
@@ -302,8 +301,14 @@ def get_activity_filter_by_date(
             "start_time": activity.start_time,
             "end_time": activity.end_time,
             "location": activity.location,
+
             "check_type": activity.check_type,
             "target_group": activity.target_group,
+
+            "activity_lat": activity.activity_lat,
+            "activity_lng": activity.activity_lng,
+            "activity_radius_meter": activity.activity_radius_meter,
+
             "require_registration": activity.require_registration,
             "max_participants": activity.max_participants,
             "registered_count": registered_count,

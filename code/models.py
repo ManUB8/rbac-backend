@@ -13,6 +13,7 @@ from sqlalchemy import (
     BigInteger,
     UniqueConstraint,
     CheckConstraint,
+    Index,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
@@ -321,6 +322,23 @@ class ProductCategory(Base):
 
 class Product(Base):
     __tablename__ = "products"
+    __table_args__ = (
+        CheckConstraint(
+            "owner_type IN ('club', 'faculty', 'major', 'external')",
+            name="chk_products_owner_type",
+        ),
+        CheckConstraint("base_price IS NULL OR base_price >= 0", name="chk_products_base_price"),
+        CheckConstraint("base_stock >= 0", name="chk_products_base_stock"),
+        CheckConstraint(
+            "limit_per_student IS NULL OR limit_per_student > 0",
+            name="chk_products_limit_per_student",
+        ),
+        CheckConstraint("weight_gram IS NULL OR weight_gram >= 0", name="chk_products_weight"),
+        CheckConstraint("sold_count >= 0", name="chk_products_sold_count"),
+        Index("ix_products_category_id", "category_id"),
+        Index("ix_products_owner_type", "owner_type"),
+        Index("ix_products_is_active", "is_active"),
+    )
 
     product_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -357,6 +375,19 @@ class Product(Base):
 
 class ProductVariant(Base):
     __tablename__ = "product_variants"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "variant_name",
+            "color_name",
+            name="uq_product_variant_color",
+        ),
+        UniqueConstraint("sku_code", name="uq_product_variants_sku_code"),
+        CheckConstraint("price >= 0", name="chk_variants_price"),
+        CheckConstraint("stock >= 0", name="chk_variants_stock"),
+        Index("ix_product_variants_product_id", "product_id"),
+        Index("ix_product_variants_is_active", "is_active"),
+    )
 
     variant_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.product_id", ondelete="CASCADE"), nullable=False)
@@ -386,6 +417,16 @@ class Cart(Base):
 
 class CartItem(Base):
     __tablename__ = "cart_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "cart_id",
+            "product_id",
+            "variant_id",
+            name="uq_cart_product_variant",
+        ),
+        CheckConstraint("quantity > 0", name="chk_cart_items_quantity"),
+        Index("ix_cart_items_cart_id", "cart_id"),
+    )
 
     cart_item_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     cart_id = Column(UUID(as_uuid=True), ForeignKey("carts.cart_id", ondelete="CASCADE"), nullable=False)
@@ -400,6 +441,27 @@ class CartItem(Base):
 
 class Order(Base):
     __tablename__ = "orders"
+    __table_args__ = (
+        CheckConstraint("total_amount >= 0", name="chk_orders_total_amount"),
+        CheckConstraint(
+            "order_status IN ('pending_payment', 'paid', 'preparing', "
+            "'ready_for_pickup', 'shipping', 'completed', 'cancelled')",
+            name="chk_orders_order_status",
+        ),
+        CheckConstraint(
+            "payment_status IN ('waiting_payment', 'paid', 'rejected', "
+            "'expired', 'cancelled')",
+            name="chk_orders_payment_status",
+        ),
+        CheckConstraint(
+            "delivery_type IN ('pickup', 'shipping')",
+            name="chk_orders_delivery_type",
+        ),
+        Index("ix_orders_student_id", "student_id"),
+        Index("ix_orders_order_status", "order_status"),
+        Index("ix_orders_payment_status", "payment_status"),
+        Index("ix_orders_created_at", "created_at"),
+    )
 
     order_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_no = Column(String(50), nullable=False, unique=True)
@@ -426,6 +488,13 @@ class Order(Base):
 
 class OrderItem(Base):
     __tablename__ = "order_items"
+    __table_args__ = (
+        CheckConstraint("price_snapshot >= 0", name="chk_order_items_price"),
+        CheckConstraint("quantity > 0", name="chk_order_items_quantity"),
+        CheckConstraint("total_price >= 0", name="chk_order_items_total"),
+        Index("ix_order_items_order_id", "order_id"),
+        Index("ix_order_items_product_id", "product_id"),
+    )
 
     order_item_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -447,6 +516,16 @@ class OrderItem(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = (
+        UniqueConstraint("order_id", name="uq_payments_order_id"),
+        CheckConstraint("amount >= 0", name="chk_payments_amount"),
+        CheckConstraint(
+            "payment_status IN ('waiting_payment', 'paid', 'rejected', "
+            "'expired', 'cancelled')",
+            name="chk_payments_status",
+        ),
+        Index("ix_payments_payment_status", "payment_status"),
+    )
 
     payment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False)
@@ -464,6 +543,20 @@ class Payment(Base):
 
 class StockMovement(Base):
     __tablename__ = "stock_movements"
+    __table_args__ = (
+        CheckConstraint(
+            "movement_type IN ('increase', 'decrease', 'sale', "
+            "'cancel_return', 'adjust')",
+            name="chk_stock_movements_type",
+        ),
+        CheckConstraint("quantity > 0", name="chk_stock_movements_quantity"),
+        CheckConstraint("before_stock >= 0", name="chk_stock_movements_before_stock"),
+        CheckConstraint("after_stock >= 0", name="chk_stock_movements_after_stock"),
+        Index("ix_stock_movements_product_id", "product_id"),
+        Index("ix_stock_movements_variant_id", "variant_id"),
+        Index("ix_stock_movements_ref_order_id", "ref_order_id"),
+        Index("ix_stock_movements_created_at", "created_at"),
+    )
 
     stock_movement_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 

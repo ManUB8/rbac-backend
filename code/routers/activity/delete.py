@@ -103,3 +103,34 @@ def delete_activity(
         "updated_by_id": activity.updated_by_id,
         "updated_by_name": activity.updated_by_name,
     }
+
+
+@router.delete("/hard-delete/{activity_id}")
+def hard_delete_activity(
+    activity_id: int,
+    data: ActivityDeleteRequest,
+    db: Session = Depends(get_db)
+):
+    activity = (
+        db.query(Activity)
+        .filter(Activity.activity_id == activity_id)
+        .first()
+    )
+
+    if not activity:
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบกิจกรรม"
+        )
+
+    db.query(StudentActivity).filter(
+        StudentActivity.activity_id == activity_id
+    ).delete(synchronize_session=False)
+
+    db.delete(activity)
+
+    db.commit()
+
+    return {
+        "detail": "ลบกิจกรรมออกจากฐานข้อมูลถาวรสำเร็จ"
+    }

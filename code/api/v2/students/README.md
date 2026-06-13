@@ -15,6 +15,26 @@ HTTP request
 
 ความหมายคือ request เข้ามาที่ `router.py` ก่อน จากนั้น router เรียก `service.py` เพื่อทำงานจริง ถ้าต้อง query database ให้ service เรียก `repository.py` และถ้าต้องแปลงข้อมูลก่อนส่ง response ให้ใช้ `serializers.py`
 
+## Endpoint ปัจจุบัน
+
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| POST | `/student/v2/register` | นิสิตสมัครบัญชี |
+| POST | `/student/v2/admin/create` | Admin สร้างนิสิต |
+| PATCH | `/student/v2/admin/update-stu/{student_id}` | Admin แก้ข้อมูลนิสิตและ user |
+| DELETE | `/student/v2/delete/{student_id}` | ลบนิสิต |
+| GET | `/student/v2/all-students` | ดึงนิสิตทั้งหมด |
+| GET | `/student/v2/get-one/{student_id}` | ดึงนิสิตรายคน |
+| GET | `/student/v2/get-all/faculties-student` | สรุปนิสิตตามคณะ |
+| GET | `/student/v2/get-all/major/{faculty_id}` | สรุปสาขาตามคณะ |
+| GET | `/student/v2/get-all/student-major/{major_id}` | ดึงนิสิตตามสาขา |
+| POST | `/student/v2/get-all/filter` | Filter ด้วย request body |
+| GET | `/student/v2/get-all/filter` | Filter ด้วย query parameters |
+| DELETE | `/student/v2/admin/delete-all-students` | ลบนิสิตและ user ทั้งหมด |
+| GET | `/student/v2/summary/year/{year_status}` | สรุปตามชั้นปี |
+| GET | `/student/v2/summary/year-code/{year_status}/{student_code_prefix}` | สรุปตามชั้นปีและรหัสขึ้นต้น |
+| GET | `/student/v2/summary/code-prefix/{student_code_prefix}` | สรุปตามรหัสขึ้นต้น |
+
 ## แต่ละไฟล์คืออะไร
 
 ### `router.py`

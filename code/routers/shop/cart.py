@@ -2,7 +2,7 @@ from decimal import Decimal
 from uuid import UUID
 import time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -87,6 +87,32 @@ def check_limited_product(
             status_code=400,
             detail=f"สินค้า Limited นี้ซื้อได้ไม่เกิน {limit} ชิ้นต่อคน"
         )
+
+
+def get_owned_cart_item(
+    db: Session,
+    cart_item_id: UUID,
+    student_code: str,
+):
+    student = get_student_by_code(db, student_code)
+    row = (
+        db.query(CartItem, Cart)
+        .join(Cart, Cart.cart_id == CartItem.cart_id)
+        .filter(
+            CartItem.cart_item_id == cart_item_id,
+            Cart.student_id == student.student_id,
+        )
+        .first()
+    )
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบสินค้าในตะกร้าของนิสิตนี้",
+        )
+
+    item, cart = row
+    return student, cart, item
 
 
 def build_cart_response(db: Session, cart: Cart, student: Student):
@@ -299,17 +325,11 @@ def update_cart_item(
     if body.quantity <= 0:
         raise HTTPException(status_code=400, detail="จำนวนสินค้าต้องมากกว่า 0")
 
-    item = (
-        db.query(CartItem)
-        .filter(CartItem.cart_item_id == cart_item_id)
-        .first()
+    student, cart, item = get_owned_cart_item(
+        db=db,
+        cart_item_id=cart_item_id,
+        student_code=body.student_code,
     )
-
-    if not item:
-        raise HTTPException(status_code=404, detail="ไม่พบสินค้าในตะกร้า")
-
-    cart = db.query(Cart).filter(Cart.cart_id == item.cart_id).first()
-    student = db.query(Student).filter(Student.student_id == cart.student_id).first()
 
     product = db.query(Product).filter(Product.product_id == item.product_id).first()
 
@@ -350,19 +370,14 @@ def update_cart_item(
 @router.delete("/cart/item/{cart_item_id}", response_model=CartMessageResponse)
 def delete_cart_item(
     cart_item_id: UUID,
+    student_code: str = Query(...),
     db: Session = Depends(get_db),
 ):
-    item = (
-        db.query(CartItem)
-        .filter(CartItem.cart_item_id == cart_item_id)
-        .first()
+    student, cart, item = get_owned_cart_item(
+        db=db,
+        cart_item_id=cart_item_id,
+        student_code=student_code,
     )
-
-    if not item:
-        raise HTTPException(status_code=404, detail="ไม่พบสินค้าในตะกร้า")
-
-    cart = db.query(Cart).filter(Cart.cart_id == item.cart_id).first()
-    student = db.query(Student).filter(Student.student_id == cart.student_id).first()
 
     db.delete(item)
     cart.updated_at = get_unix_time()
